@@ -3,9 +3,9 @@
 ;; Author: Harrison Pielke-Lombardo
 ;; Maintainer: Harrison Pielke-Lombardo
 ;; Version: 1.0.0
-;; Package-Requires: (dependencies)
-;; Homepage: www.github.com/tuh8888/project-name
-;; Keywords: keywords
+;; Package-Requires: ((emacs "24.3"))
+;; Homepage: http://www.github.com/tuh8888/chezmoi.el
+;; Keywords: vc
 
 
 ;; This file is not part of GNU Emacs
