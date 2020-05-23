@@ -38,35 +38,19 @@
       (whitespace-mode 0)
       (shell-command "chezmoi diff" b))))
 
-(-> "hello"
-    (split-string "l")
-    length)
-
 (defun chezmoi|changed-p (f)
-  (-> "chezmoi diff "
-      (concat f)
-      shell-command-to-string
-      length
-      (> 0)))
+  (> (length (shell-command-to-string (concat "chezmoi diff " f))) 0))
 
 (defun shell-command-to-string-no-line (cmd)
-  (-> cmd
-      shell-command-to-string
-      (split-string "\n")
-      first))
+  (first (split-string (shell-command-to-string cmd) "\n")))
 
 (defun chezmoi|merge ()
   (interactive)
-  (let* ((managed-files (-> "chezmoi managed"
-                            shell-command-to-string
-                            (split-string "\n")))
-         (changed-files (->> managed-files
-                             (remove-if #'file-directory-p)
-                             (remove-if-not #'chezmoi|changed-p)))
+  (let* ((managed-files (split-string (shell-command-to-string "chezmoi managed") "\n"))
+         (changed-files (remove-if-not #'chezmoi|changed-p
+                                       (remove-if #'file-directory-p  managed-files)))
          (selected-file (completing-read "Select a dotfile to merge:" changed-files))
-         (source-file (-> "chezmoi source-path "
-                          (concat selected-file)
-                          shell-command-to-string-no-line)))
+         (source-file (shell-command-to-string-no-line (concat "chezmoi source-path " selected-file))))
     (ediff-files selected-file source-file)))
 
 (defun chezmoi|magit-status ()
@@ -75,23 +59,16 @@
 
 (defun chezmoi|edit ()
   (interactive)
-  (let* ((managed-files (-> "chezmoi managed"
-                            shell-command-to-string
-                            (split-string "\n")))
-         (changed-files (->> managed-files
-                             (remove-if #'file-directory-p)))
+  (let* ((managed-files (split-string (shell-command-to-string "chezmoi managed") "\n"))
+         (changed-files (remove-if #'file-directory-p managed-files))
          (selected-file (completing-read "Select a dotfile to merge:" changed-files))
-         (source-file (-> "chezmoi source-path "
-                          (concat selected-file)
-                          shell-command-to-string-no-line)))
+         (source-file (shell-command-to-string-no-line (concat "chezmoi source-path " selected-file))))
     (find-file source-file)
     (setq-local chezmoi|selected-file selected-file)))
 
 (defun chezmoi|apply ()
   (interactive)
-  (-> "chezmoi apply "
-      (concat chezmoi|selected-file)
-      shell-command))
+  (shell-command (concat "chezmoi apply " chezmoi|selected-file)))
 
 (provide 'chezmoi)
 
