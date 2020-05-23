@@ -1,0 +1,15 @@
+#+title: chezmoi.el
+#+description: This package provides convenient functions for interacting with chezmoi in emacs.
+
+* TODO Installation
+
+
+* Functions
+
+| Function     | chezmoi equivalent |
+|--------------+--------------------|
+| diff         | chezmoi diff       |
+| ediff        | chezmoi merge      |
+| find         | chezmoi edit       |
+| magit-status | chezmoi git status |
+| write        | chezmoi apply      |
