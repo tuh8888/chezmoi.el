@@ -31,6 +31,7 @@
 ;;; Code:
 
 (require 'magit)
+(require 'cl)
 
 (defvar chezmoi|selected-file)
 
@@ -73,7 +74,7 @@ Note: Does not run =chezmoi edit="
   (interactive)
   (let* ((managed-files (split-string (shell-command-to-string "chezmoi managed") "\n"))
          (changed-files (remove-if #'file-directory-p managed-files))
-         (selected-file (completing-read "Select a dotfile to merge:" changed-files))
+         (selected-file (completing-read "Select a dotfile to edit:" changed-files))
          (source-file (shell-command-to-string-no-line (concat "chezmoi source-path " selected-file))))
     (find-file source-file)
     (setq-local chezmoi|selected-file selected-file)))
