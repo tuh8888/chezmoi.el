@@ -1,5 +1,6 @@
 #+title: chezmoi.el
-#+description: This package provides convenient functions for interacting with chezmoi in emacs.
+
+This package provides convenience functions for interacting with the [[https://chezmoi.io/][chezmoi]] dotfile management system in Emacs.
 
 * TODO Installation
 
