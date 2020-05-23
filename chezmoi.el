@@ -33,7 +33,7 @@
 (defvar chezmoi|selected-file)
 
 (defun chezmoi|diff ()
-  "TODO."
+  "View output of =chezmoi diff= in a diff-buffer."
   (interactive)
   (let ((b (or (get-buffer "*chezmoi-diff*") (generate-new-buffer "*chezmoi-diff*"))))
     (with-current-buffer b
@@ -49,8 +49,9 @@
   "TODO."
   (first (split-string (shell-command-to-string cmd) "\n")))
 
-(defun chezmoi|merge ()
-  "TODO."
+(defun chezmoi|ediff ()
+  "Choose a target to merge with its source using ediff.
+Note: Does not run =chezmoi merge=."
   (interactive)
   (let* ((managed-files (split-string (shell-command-to-string "chezmoi managed") "\n"))
          (changed-files (remove-if-not #'chezmoi|changed-p
@@ -60,12 +61,13 @@
     (ediff-files selected-file source-file)))
 
 (defun chezmoi|magit-status ()
-  "TODO."
+  "Show the status of the chezmoi source repository."
   (interactive)
   (magit-status (shell-command-to-string-no-line "chezmoi source-path")))
 
-(defun chezmoi|edit ()
-  "TODO."
+(defun chezmoi|find ()
+  "Edit a source file managed by chezmoi.
+Note: Does not run =chezmoi edit="
   (interactive)
   (let* ((managed-files (split-string (shell-command-to-string "chezmoi managed") "\n"))
          (changed-files (remove-if #'file-directory-p managed-files))
@@ -74,8 +76,8 @@
     (find-file source-file)
     (setq-local chezmoi|selected-file selected-file)))
 
-(defun chezmoi|apply ()
-  "TODO."
+(defun chezmoi|write ()
+  "Run =chezmoi apply= on the target file associated with the buffer, overwriting the target with the source state."
   (interactive)
   (shell-command (concat "chezmoi apply " chezmoi|selected-file)))
 
