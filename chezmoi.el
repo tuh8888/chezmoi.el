@@ -30,7 +30,10 @@
 
 ;;; Code:
 
+(defvar chezmoi|selected-file)
+
 (defun chezmoi|diff ()
+  "TODO."
   (interactive)
   (let ((b (or (get-buffer "*chezmoi-diff*") (generate-new-buffer "*chezmoi-diff*"))))
     (with-current-buffer b
@@ -39,12 +42,15 @@
       (shell-command "chezmoi diff" b))))
 
 (defun chezmoi|changed-p (f)
+  "TODO."
   (> (length (shell-command-to-string (concat "chezmoi diff " f))) 0))
 
 (defun shell-command-to-string-no-line (cmd)
+  "TODO."
   (first (split-string (shell-command-to-string cmd) "\n")))
 
 (defun chezmoi|merge ()
+  "TODO."
   (interactive)
   (let* ((managed-files (split-string (shell-command-to-string "chezmoi managed") "\n"))
          (changed-files (remove-if-not #'chezmoi|changed-p
@@ -54,10 +60,12 @@
     (ediff-files selected-file source-file)))
 
 (defun chezmoi|magit-status ()
+  "TODO."
   (interactive)
   (magit-status (shell-command-to-string-no-line "chezmoi source-path")))
 
 (defun chezmoi|edit ()
+  "TODO."
   (interactive)
   (let* ((managed-files (split-string (shell-command-to-string "chezmoi managed") "\n"))
          (changed-files (remove-if #'file-directory-p managed-files))
@@ -67,6 +75,7 @@
     (setq-local chezmoi|selected-file selected-file)))
 
 (defun chezmoi|apply ()
+  "TODO."
   (interactive)
   (shell-command (concat "chezmoi apply " chezmoi|selected-file)))
 
