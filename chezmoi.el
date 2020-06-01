@@ -46,7 +46,7 @@
 
 (defun chezmoi|changed-p (f)
   "TODO."
-  (> (length (shell-command-to-string (concat "chezmoi diff " f))) 0))
+  (string-equal "different\n" (shell-command-to-string (concat "chezmoi verify " f " || echo \"different\""))))
 
 (defun shell-command-to-string-no-line (cmd)
   "TODO."
