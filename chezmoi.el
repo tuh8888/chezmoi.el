@@ -100,7 +100,7 @@ Note: Does not run =chezmoi edit="
              (source-file (shell-command-to-string-no-line (concat "chezmoi source-path " selected-file))))
         (with-current-buffer (find-file source-file)
           (setq-local chezmoi|selected-file selected-file)
-          (chezmoi|write-from-source))
+          (chezmoi|write-from-target))
         (setq changed-files (remove selected-file changed-files))))))
 
 (provide 'chezmoi)
