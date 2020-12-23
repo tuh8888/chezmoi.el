@@ -35,6 +35,26 @@
 
 (defvar chezmoi|selected-file)
 
+(defun chezmoi|list-changed ()
+  "Use chezmoi diff to return the files that have changed"
+  (with-temp-buffer
+    (let ((files '())
+          (search-p t))
+      (shell-command "chezmoi diff" (current-buffer))
+        (goto-char (point-min))
+        (while (not (eq search-p nil))
+          (let ((index (re-search-forward "^\\+\\{3\\} .*" nil t)))
+            (if (equal index nil)
+                (setq search-p nil)
+              (progn
+                (let* ((line-end index)
+                       (line-beg (line-beginning-position))
+                       (line (buffer-substring-no-properties line-beg line-end))
+                       (file-name (substring line 5)))
+                  (add-to-list 'files file-name)
+                  )))))
+      files)))
+
 (defun chezmoi|diff ()
   "View output of =chezmoi diff= in a diff-buffer."
   (interactive)
