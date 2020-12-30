@@ -35,6 +35,26 @@
 
 (defvar chezmoi|selected-file)
 
+(defun chezmoi|list-changed ()
+  "Use chezmoi diff to return the files that have changed"
+  (with-temp-buffer
+    (let ((files '())
+          (search-p t))
+      (shell-command "chezmoi diff" (current-buffer))
+        (goto-char (point-min))
+        (while (not (eq search-p nil))
+          (let ((index (re-search-forward "^\\+\\{3\\} .*" nil t)))
+            (if (equal index nil)
+                (setq search-p nil)
+              (progn
+                (let* ((line-end index)
+                       (line-beg (line-beginning-position))
+                       (line (buffer-substring-no-properties line-beg line-end))
+                       (file-name (substring line 5)))
+                  (add-to-list 'files file-name)
+                  )))))
+      files)))
+
 (defun chezmoi|diff ()
   "View output of =chezmoi diff= in a diff-buffer."
   (interactive)
@@ -56,10 +76,7 @@
   "Choose a target to merge with its source using ediff.
 Note: Does not run =chezmoi merge=."
   (interactive)
-  (let* ((managed-files (split-string (shell-command-to-string "chezmoi managed") "\n"))
-         (changed-files (remove-if-not #'chezmoi|changed-p
-                                       (remove-if #'file-directory-p  managed-files)))
-         (selected-file (completing-read "Select a dotfile to merge:" changed-files))
+  (let* ((selected-file (completing-read "Select a dotfile to merge:" (chezmoi|list-changed)))
          (source-file (shell-command-to-string-no-line (concat "chezmoi source-path " selected-file))))
     (ediff-files selected-file source-file)))
 
