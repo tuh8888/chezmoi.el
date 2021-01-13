@@ -31,7 +31,7 @@
 ;;; Code:
 
 (require 'magit)
-(require 'cl)
+(require 'cl-lib)
 
 (defvar chezmoi|selected-file)
 
