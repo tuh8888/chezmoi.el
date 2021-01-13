@@ -83,7 +83,7 @@ Note: Does not run =chezmoi merge=."
 (defun chezmoi|magit-status ()
   "Show the status of the chezmoi source repository."
   (interactive)
-  (magit-status (shell-command-to-string-no-line "chezmoi source-path")))
+  (magit-status-setup-buffer (shell-command-to-string-no-line "chezmoi source-path")))
 
 (defun chezmoi|find ()
   "Edit a source file managed by chezmoi.
