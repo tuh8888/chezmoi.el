@@ -90,7 +90,7 @@ Note: Does not run =chezmoi merge=."
 Note: Does not run =chezmoi edit="
   (interactive)
   (let* ((managed-files (split-string (shell-command-to-string "chezmoi managed") "\n"))
-         (changed-files (remove-if #'file-directory-p managed-files))
+         (changed-files (cl-remove-if #'file-directory-p managed-files))
          (selected-file (completing-read "Select a dotfile to edit:" changed-files))
          (source-file (shell-command-to-string-no-line (concat "chezmoi source-path " selected-file))))
     (find-file source-file)
@@ -110,8 +110,8 @@ Note: Does not run =chezmoi edit="
   "Iteratively select files to overwrite their source with the target state."
   (interactive)
   (let* ((managed-files (split-string (shell-command-to-string "chezmoi managed") "\n"))
-         (changed-files (remove-if-not #'chezmoi|changed-p
-                                       (remove-if #'file-directory-p  managed-files))))
+         (changed-files (cl-remove-if-not #'chezmoi|changed-p
+                                          (cl-remove-if #'file-directory-p  managed-files))))
     (while changed-files
       (let* ((selected-file (completing-read "Select a dotfile to overwrite its source (C-g to stop):" changed-files))
              (source-file (shell-command-to-string-no-line (concat "chezmoi source-path " selected-file))))
