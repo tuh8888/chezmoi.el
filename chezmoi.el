@@ -73,7 +73,7 @@ Note: Does not run =chezmoi merge=."
   (interactive)
   (let* ((selected-file (completing-read "Select a dotfile to merge:" (chezmoi|list-changed)))
          (source-file (shell-command-to-string-no-line (concat "chezmoi source-path " selected-file))))
-    (ediff-files selected-file source-file)))
+    (ediff-files source-file selected-file)))
 
 (defun chezmoi|magit-status ()
   "Show the status of the chezmoi source repository."
