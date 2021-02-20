@@ -48,22 +48,10 @@
 (defun chezmoi|managed-files ()
   (cl-remove-if #'file-directory-p (chezmoi|managed)))
 
-(defun chezmoi|find ()
-  "Edit a source file managed by chezmoi.
-Note: Does not run =chezmoi edit="
-  (interactive)
-  (chezmoi|select-file (chezmoi|managed-files)
-                       "Select a dotfile to edit:"
-                       (lambda (file)
-                         (message file)
-                         (find-file (chezmoi|source-file file))
-                         (setq-local chezmoi|buffer-target-file file))))
 
 (defun chezmoi|write (target-file)
   "Run =chezmoi apply= on the target file associated with the buffer, overwriting the target with the source state."
   (interactive (list chezmoi|buffer-target-file))
-  (with-current-buffer (find-file-noselect (chezmoi|source-file target-file))
-    (save-buffer))
   (if (= 0 (shell-command (concat "chezmoi apply " target-file)))
       (message "Wrote %s" target-file)
     (message "Failed to write file")))
@@ -92,8 +80,23 @@ Note: Does not run =chezmoi edit="
           (push file-name files)))
       files)))
 
+(defun chezmoi|find ()
+  "Edit a source file managed by chezmoi. If the target file has the same state as the source file,
+add a hook to save-buffer that applies the source state to the target state. This way, when the
+buffer editing the source state is saved the target state is kept in sync.
+Note: Does not run =chezmoi edit="
+  (interactive)
+  (chezmoi|select-file (chezmoi|managed-files)
+                       "Select a dotfile to edit:"
+                       (lambda (file)
+                         (message file)
+                         (find-file (chezmoi|source-file file))
+                         (unless (member file (chezmoi|list-changed))
+                           (add-hook 'after-save-hook (lambda () (chezmoi|write file)) 0 t))
+                         (setq-local chezmoi|buffer-target-file file))))
+
 (defun chezmoi|ediff ()
-  "Choose a target to merge with its source using ediff.
+  "Choose a dotfile to merge with its source using ediff.
 Note: Does not run =chezmoi merge=."
   (interactive)
   (chezmoi|select-file (chezmoi|list-changed)
