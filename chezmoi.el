@@ -48,9 +48,6 @@
   (diff-mode)
   (whitespace-mode 0))
 
-(defun chezmoi|changed-p (f)
-  "TODO."
-  (string-equal "different\n" (shell-command-to-string (concat "chezmoi verify " f " || echo \"different\""))))
 (defun chezmoi|list-changed ()
   "Use chezmoi diff to return the files that have changed"
   (with-current-buffer (chezmoi|diff-buffer)
@@ -104,9 +101,7 @@ Note: Does not run =chezmoi edit="
 (defun chezmoi|write-iteratively-from-target ()
   "Iteratively select files to overwrite their source with the target state."
   (interactive)
-  (let* ((managed-files (split-string (shell-command-to-string "chezmoi managed") "\n"))
-         (changed-files (cl-remove-if-not #'chezmoi|changed-p
-                                          (cl-remove-if #'file-directory-p  managed-files))))
+  (let ((changed-files (chezmoi|list-changed)))
     (while changed-files
       (let* ((selected-file (completing-read "Select a dotfile to overwrite its source (C-g to stop):" changed-files))
              (source-file (shell-command-to-string-no-line (concat "chezmoi source-path " selected-file))))
