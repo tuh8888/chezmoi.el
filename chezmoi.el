@@ -35,38 +35,33 @@
 
 (defvar chezmoi|selected-file)
 
-(defun chezmoi|list-changed ()
-  "Use chezmoi diff to return the files that have changed"
-  (with-temp-buffer
-    (let ((files '())
-          (search-p t))
-      (shell-command "chezmoi diff" (current-buffer))
-      (goto-char (point-min))
-      (while (not (eq search-p nil))
-        (let ((index (re-search-forward "^\\+\\{3\\} .*" nil t)))
-          (if (equal index nil)
-              (setq search-p nil)
-            (progn
-              (let* ((line-end index)
-                     (line-beg (line-beginning-position))
-                     (line (buffer-substring-no-properties line-beg line-end))
-                     (file-name (substring line 5)))
-                (push file-name files)
-                )))))
-      files)))
+(defun chezmoi|diff-buffer ()
+  "View output of =chezmoi diff= in a diff-buffer."
+  (let ((b (get-buffer-create "*chezmoi-diff*")))
+    (with-current-buffer b
+      (shell-command "chezmoi diff" b))
+    b))
 
 (defun chezmoi|diff ()
-  "View output of =chezmoi diff= in a diff-buffer."
   (interactive)
-  (let ((b (or (get-buffer "*chezmoi-diff*") (generate-new-buffer "*chezmoi-diff*"))))
-    (with-current-buffer b
-      (diff-mode)
-      (whitespace-mode 0)
-      (shell-command "chezmoi diff" b))))
+  (switch-to-buffer (chezmoi|diff-buffer))
+  (diff-mode)
+  (whitespace-mode 0))
 
 (defun chezmoi|changed-p (f)
   "TODO."
   (string-equal "different\n" (shell-command-to-string (concat "chezmoi verify " f " || echo \"different\""))))
+(defun chezmoi|list-changed ()
+  "Use chezmoi diff to return the files that have changed"
+  (with-current-buffer (chezmoi|diff-buffer)
+    (goto-char (point-max))
+    (let ((files nil))
+      (while (setq line-beg (re-search-backward "^\\+\\{3\\} .*" nil t))
+        (let ((file-name (substring (buffer-substring-no-properties line-beg
+                                                                    (line-end-position))
+                                    5)))
+          (push file-name files)))
+      files)))
 
 (defun shell-command-to-string-no-line (cmd)
   "TODO."
