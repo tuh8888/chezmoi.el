@@ -62,7 +62,7 @@
     (with-current-buffer b
       (shell-command "chezmoi diff" b))
     (unless arg
-      (switch-to-buffer (chezmoi|diff t))
+      (switch-to-buffer b)
       (diff-mode)
       (whitespace-mode 0))
     b))
