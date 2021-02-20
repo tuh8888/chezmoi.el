@@ -110,7 +110,7 @@ Note: Does not run =chezmoi merge=."
   (magit-status-setup-buffer (chezmoi|source-file nil)))
 
 (defun chezmoi|select-files (files prompt f)
-  "Iteratively select files from files and apply f to each selected. Selected files are removed after they are selected."
+  "Iteratively select file from files and apply f to each selected. Selected files are removed after they are selected."
   (let ((files (copy-list files)))
     (while files
       (chezmoi|select-files files
@@ -128,17 +128,18 @@ Note: Does not run =chezmoi merge=."
     (replace-buffer-contents (find-file-noselect target-file))))
 
 (defun chezmoi|write-files ()
+  "Force overwrite multiple dotfiles with their source state."
   (interactive)
   (chezmoi|select-files (chezmoi|list-changed)
-                        "Select dotfile to write from source"
+                        "Select dotfile to apply source state changes"
                         #'chezmoi|write))
 
 
 (defun chezmoi|write-files-from-target ()
-  "Iteratively select files to overwrite their source with the target state."
+  "Force overwrite the source state of multiple dotfiles with their target state."
   (interactive)
   (chezmoi|select-files (chezmoi|list-changed)
-                        "Select a dotfile to overwrite its source with target state"
+                        "Select a dotfile to overwrite its source state with target state"
                         #'chezmoi|write-from-target))
 
 (provide 'chezmoi)
