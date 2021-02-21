@@ -60,6 +60,7 @@
   (interactive "i")
   (let ((b (get-buffer-create "*chezmoi-diff*")))
     (with-current-buffer b
+      (erase-buffer)
       (shell-command "chezmoi diff" b))
     (unless arg
       (switch-to-buffer b)
