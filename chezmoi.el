@@ -43,7 +43,7 @@
                        "\n")))
 
 (defun chezmoi|managed ()
-  (split-string (shell-command-to-string "chezmoi managed") "\n"))
+  (cl-map 'list (lambda (file) (concat "~/" file)) (split-string (shell-command-to-string "chezmoi managed") "\n")))
 
 (defun chezmoi|managed-files ()
   (cl-remove-if #'file-directory-p (chezmoi|managed)))
