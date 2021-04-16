@@ -77,7 +77,7 @@
         (let ((file-name (substring (buffer-substring-no-properties line-beg
                                                                     (line-end-position))
                                     5)))
-          (push file-name files)))
+          (push (concat "~" file-name) files)))
       files)))
 
 (defun chezmoi|find ()
