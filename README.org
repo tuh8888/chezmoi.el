@@ -4,7 +4,6 @@ This package provides convenience functions for interacting with the [[https://c
 
 * TODO Installation
 
-
 * Functions
 
 | Function     | chezmoi equivalent |
@@ -14,3 +13,21 @@ This package provides convenience functions for interacting with the [[https://c
 | find         | chezmoi edit       |
 | magit-status | chezmoi git status |
 | write        | chezmoi apply      |
+
+* Gotchas
+** Lock files
+  When running ~chezmoi~ while working with Emacs, an error will occur when a [[https://www.gnu.org/software/emacs/manual/html_node/elisp/File-Locks.html][lockfile]] is created in the source directory. This occurs when a buffer has been edited, but before it is saved. Emacs creates a file starting with =.#=. For some reason, ~chezmoi~ will attempt to resolve this file, even though it claims to ignore files starting with a =.= in its [[https://www.chezmoi.io/docs/reference/][reference]]:
+
+  #+begin_quote
+  chezmoi ignores all files and directories in the source directory that begin with a . with the exception of files and directories that begin with .chezmoi.
+  #+end_quote
+
+  When this occurs, for example when editing your source ~.bashrc~ in ~/.local/share/chezmoi/dot_bashrc~, commands such as ~chezmoi diff~ will produce errors like: ~`chezmoi: stat /home/user/.local/share/chezmoi~.
+
+  This will lead to errors while using this package, especially the functions that write from the target to the source like ~chezmoi|write-files-from-target~ since these leave unsaved buffers behind.
+
+  To remedy this situation, one solution is to prevent emacs from creating lockfiles by setting the variable ~create-lockfiles~ to ~nil~. I include a file ~.dir_locals~ in my source directory that contains:
+
+  #+begin_src emacs-lisp
+((nil . ((create-lockfiles . nil))))
+  #+end_src
