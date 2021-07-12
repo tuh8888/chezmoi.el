@@ -140,6 +140,10 @@ Note: Does not run =chezmoi merge=."
                         "Select a dotfile to overwrite its source state with target state"
                         #'chezmoi|write-from-target))
 
+(defun chezmoi|open-target ()
+  (interactive)
+  (find-file chezmoi|buffer-target-file))
+
 (provide 'chezmoi)
 
 ;;; chezmoi.el ends here
