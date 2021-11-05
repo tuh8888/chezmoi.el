@@ -39,7 +39,7 @@
   (funcall f (completing-read prompt files)))
 
 (defun chezmoi|source-file (target-file)
-  (cl-first (split-string (shell-command-to-string (concat "chezmoi source-path " target-file))
+  (cl-first (split-string (shell-command-to-string (concat "chezmoi source-path " (shell-quote-argument target-file)))
                        "\n")))
 
 (defun chezmoi|managed ()
