@@ -144,6 +144,11 @@ Note: Does not run =chezmoi merge=."
   (interactive)
   (find-file chezmoi|buffer-target-file))
 
+(defun chezmoi|dired-add-marked-files ()
+  (interactive)
+  (dolist (file (dired-get-marked-files))
+    (shell-command (concat "chezmoi add " file))))
+
 (provide 'chezmoi)
 
 ;;; chezmoi.el ends here
