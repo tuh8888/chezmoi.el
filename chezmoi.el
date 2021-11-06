@@ -39,7 +39,7 @@
   (funcall f (completing-read prompt files)))
 
 (defun chezmoi|source-file (target-file)
-  (let* ((cmd (concat "chezmoi source-path " (shell-quote-argument target-file)))
+  (let* ((cmd (concat "chezmoi source-path " (when target-file (shell-quote-argument target-file))))
          (result (shell-command-to-string cmd))
          (files (split-string result "\n")))
     (cl-first files)))
