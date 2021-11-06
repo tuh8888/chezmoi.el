@@ -39,11 +39,16 @@
   (funcall f (completing-read prompt files)))
 
 (defun chezmoi|source-file (target-file)
-  (cl-first (split-string (shell-command-to-string (concat "chezmoi source-path " (shell-quote-argument target-file)))
-                       "\n")))
+  (let* ((cmd (concat "chezmoi source-path " (shell-quote-argument target-file)))
+         (result (shell-command-to-string cmd))
+         (files (split-string result "\n")))
+    (cl-first files)))
 
 (defun chezmoi|managed ()
-  (cl-map 'list (lambda (file) (concat "~/" file)) (split-string (shell-command-to-string "chezmoi managed") "\n")))
+  (let* ((cmd "chezmoi managed")
+         (result (shell-command-to-string cmd))
+         (files (split-string result "\n")))
+    (cl-map 'list (lambda (file) (concat "~/" file)) files)))
 
 (defun chezmoi|managed-files ()
   (cl-remove-if #'file-directory-p (chezmoi|managed)))
