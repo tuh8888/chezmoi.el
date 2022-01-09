@@ -75,16 +75,17 @@
 
 (defun chezmoi|changed-files ()
   "Use chezmoi diff to return the files that have changed"
-  (with-current-buffer (chezmoi|diff t)
-    (goto-char (point-max))
-    (let ((files nil))
-      (while (setq line-beg (re-search-backward "^\\+\\{3\\} .*" nil t))
-        (let ((file-name (substring
-                          (buffer-substring-no-properties line-beg
-                                                          (line-end-position))
-                          5)))
-          (push (concat "~" file-name) files)))
-      files)))
+  (let ((line-beg nil))
+    (with-current-buffer (chezmoi|diff t)
+      (goto-char (point-max))
+      (let ((files nil))
+        (while (setq line-beg (re-search-backward "^\\+\\{3\\} .*" nil t))
+          (let ((file-name (substring
+                            (buffer-substring-no-properties line-beg
+                                                            (line-end-position))
+                            5)))
+            (push (concat "~" file-name) files)))
+        files))))
 
 (defun chezmoi|find ()
   "Edit a source file managed by chezmoi. If the target file has the same state
