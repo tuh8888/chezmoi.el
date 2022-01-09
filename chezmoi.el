@@ -93,7 +93,7 @@ the target state. This way, when the buffer editing the source state is saved
 the target state is kept in sync. Note: Does not run =chezmoi edit="
   (interactive)
   (chezmoi|select-file (chezmoi|managed-files)
-                       "Select a dotfile to edit:"
+                       "Select a dotfile to edit: "
                        (lambda (file)
                          (message file)
                          (find-file (chezmoi|source-file file))
@@ -107,7 +107,7 @@ the target state is kept in sync. Note: Does not run =chezmoi edit="
 Note: Does not run =chezmoi merge=."
   (interactive)
   (chezmoi|select-file (chezmoi|changed-files)
-                       "Select a dotfile to merge:"
+                       "Select a dotfile to merge: "
                        (lambda (file)
                          (ediff-files (chezmoi|source-file file) file))))
 
@@ -122,7 +122,7 @@ files are removed after they are selected."
   (let ((files (copy-list files)))
     (while files
       (chezmoi|select-file files
-                           (concat prompt " (C-g to stop):")
+                           (concat prompt " (C-g to stop): ")
                            (lambda (file)
                              (funcall f file)
                              (setq files (remove file files)))))))
