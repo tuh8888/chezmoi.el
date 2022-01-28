@@ -97,16 +97,16 @@ the target state is kept in sync. Note: Does not run =chezmoi edit="
                        "Select a dotfile to edit: "
                        (lambda (file)
                          (find-file (chezmoi|source-file file))
+                         (let ((mode (assoc-default
+                                      (file-name-nondirectory file)
+                                      auto-mode-alist
+                                      'string-match)))
+                           (when mode (funcall mode)))
+                         (message file)
                          (unless (member file (chezmoi|changed-files))
                            (add-hook 'after-save-hook
                                      (lambda () (chezmoi|write file)) 0 t))
-                         (setq-local chezmoi|buffer-target-file file)
-			 (let ((mode (assoc-default
-				      (file-name-nondirectory file)
-				      auto-mode-alist
-				      'string-match)))
-			   (funcall mode))
-                         (message file))))
+                         (setq-local chezmoi|buffer-target-file file))))
 
 (defun chezmoi|ediff ()
   "Choose a dotfile to merge with its source using ediff.
