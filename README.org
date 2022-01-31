@@ -8,26 +8,26 @@ This package provides convenience functions for interacting with the [[https://c
   Add keybindings to some functions. Or call using ~M-x <cmd>~.
 
  #+begin_src emacs-lisp :noweb yes
-(global-set-key (kbd "C-c C f")  #'chezmoi|find)
-(global-set-key (kbd "C-c C s")  #'chezmoi|write)
+(global-set-key (kbd "C-c C f")  #'chezmoi-find)
+(global-set-key (kbd "C-c C s")  #'chezmoi-write)
  #+end_src
 
 * Usage
 ** Editing files
 
-  One of the main goals of this package is to allow users to access their files managed by chezmoi and sync changes in the source state with the target state files that are used. Opening source state files is done using ~chezmoi|find~. This opens a buffer for the source state and adds a hook to sync it with the corresponding target state file when changes are saved. However, to prevent overwriting changes that were made to the target state file outside of the source state (such as by auto-generated content), this hook is only added when the source and target states are in sync at the time of opening.
+  One of the main goals of this package is to allow users to access their files managed by chezmoi and sync changes in the source state with the target state files that are used. Opening source state files is done using ~chezmoi-find~. This opens a buffer for the source state and adds a hook to sync it with the corresponding target state file when changes are saved. However, to prevent overwriting changes that were made to the target state file outside of the source state (such as by auto-generated content), this hook is only added when the source and target states are in sync at the time of opening.
 
-  You can overwrite the target state file manually by calling ~chezmoi|write~ from within the buffer. Alternatively, you can overwrite the source state file with the content from the target state using ~chezmoi|write-from-target~. This can be performed for several files in a row using ~chezmoi|write-files~ and ~chezmoi|write-files-from-target~.
+  You can overwrite the target state file manually by calling ~chezmoi-write~ from within the buffer. Alternatively, you can overwrite the source state file with the content from the target state using ~chezmoi-write-from-target~. This can be performed for several files in a row using ~chezmoi-write-files~ and ~chezmoi-write-files-from-target~.
 
-  Quickly jump to the corresponding target file using ~chezmoi|open-target~.
+  Quickly jump to the corresponding target file using ~chezmoi-open-target~.
 
 ** Comparing source and target states
 
-   Emacs has a lovely package called ~ediff~ for comparing differences between files which is perfect for when the source and target states get out of sync. Quickly resolve inconsistencies between source and target states using ~chezmoi|ediff~. Or view the raw diff using ~chezmoi|diff~ if you prefer. Pipe this into your own diff workflow using ~(chezmoi|diff 1)~ to give raw diff input to some other diff management tool.
+   Emacs has a lovely package called ~ediff~ for comparing differences between files which is perfect for when the source and target states get out of sync. Quickly resolve inconsistencies between source and target states using ~chezmoi-ediff~. Or view the raw diff using ~chezmoi-diff~ if you prefer. Pipe this into your own diff workflow using ~(chezmoi-diff 1)~ to give raw diff input to some other diff management tool.
 
 ** Dired
 
-   In a Dired buffer, add files to chezmoi by either moving to the file or marking some and calling ~chezmoi|dired-add-marked-files~.
+   In a Dired buffer, add files to chezmoi by either moving to the file or marking some and calling ~chezmoi-dired-add-marked-files~.
 
 * Functions
 
@@ -51,7 +51,7 @@ This package provides convenience functions for interacting with the [[https://c
 
   When this occurs, for example when editing your source ~.bashrc~ in ~/.local/share/chezmoi/dot_bashrc~, commands such as ~chezmoi diff~ will produce errors like: ~`chezmoi: stat /home/user/.local/share/chezmoi~.
 
-  This will lead to errors while using this package, especially the functions that write from the target to the source like ~chezmoi|write-files-from-target~ since these leave unsaved buffers behind.
+  This will lead to errors while using this package, especially the functions that write from the target to the source like ~chezmoi-write-files-from-target~ since these leave unsaved buffers behind.
 
   To remedy this situation, one solution is to prevent emacs from creating lockfiles by setting the variable ~create-lockfiles~ to ~nil~. I include a file ~.dir_locals~ in my source directory that contains:
 
@@ -77,13 +77,13 @@ This package provides convenience functions for interacting with the [[https://c
     (spacemacs/declare-prefix "f d" "chezmoi")
 
     (spacemacs/set-leader-keys
-      "f d s" #'chezmoi|write
-      "f d g" #'chezmoi|magit-status
-      "f d d" #'chezmoi|diff
-      "f d e" #'chezmoi|ediff
-      "f d f" #'chezmoi|find
-      "f d i" #'chezmoi|write-files-from-target
-      "f d o" #'chezmoi|open-target)
+      "f d s" #'chezmoi-write
+      "f d g" #'chezmoi-magit-status
+      "f d d" #'chezmoi-diff
+      "f d e" #'chezmoi-ediff
+      "f d f" #'chezmoi-find
+      "f d i" #'chezmoi-write-files-from-target
+      "f d o" #'chezmoi-open-target)
 
 
     ;; I find this hook useful for my emacs config files generated through org-tangle.
