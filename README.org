@@ -47,9 +47,7 @@ This package provides convenience functions for interacting with the [[https://c
  #+begin_src emacs-lisp :noweb yes
 (defconst chezmoi-packages
   '(
-    (chezmoi :location (recipe
-                        :fetcher github
-                        :repo "tuh8888/chezmoi.el")))
+    chezmoi)
   "The list of Lisp packages required by the chezmoi layer.")
 
 
