@@ -63,11 +63,13 @@
   "List only files managed by chezmoi."
   (cl-remove-if #'file-directory-p (chezmoi-managed)))
 
-(defun chezmoi-write (target-file)
+(defun chezmoi-write (&optional target-file)
   "Run =chezmoi apply= on the TARGET-FILE.
 This overwrites the target with the source state."
-  (interactive (list chezmoi-buffer-target-file))
-  (if (= 0 (shell-command (concat "chezmoi apply " (shell-quote-argument target-file))))
+  (interactive)
+  (if (= 0 (shell-command (if target-file
+                              (concat "chezmoi apply " target-file)
+                            (concat "chezmoi apply --source-path " buffer-file-name))))
       (message "Wrote %s" target-file)
     (message "Failed to write file")))
 
