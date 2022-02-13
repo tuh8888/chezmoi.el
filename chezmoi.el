@@ -39,8 +39,6 @@
 (require 'magit)
 (require 'cl-lib)
 
-(defvar chezmoi-buffer-target-file)
-
 (defun chezmoi--select-file (files prompt f)
   "Call F on the selected file from FILES, giving PROMPT."
   (funcall f (completing-read prompt files)))
@@ -51,6 +49,74 @@
          (result (shell-command-to-string cmd))
          (files (split-string result "\n")))
     (cl-first files)))
+
+(defvar chezmoi--source-state-prefix-attrs
+  '("after_"
+    "before_"
+    "create_"
+    "dot_"
+    "empty_"
+    "encrypted_"
+    "exact_"
+    "executable_"
+    "literal_"
+    "modify_"
+    "once_"
+    "onchange_"
+    "private_"
+    "readonly_"
+    "remove_"
+    "run_"
+    "symlink_")
+  "Source state attribute prefixes.")
+
+(defvar chezmoi--source-state-suffix-attrs
+  '(".literal"
+    ".tmpl")
+  "Source state attribute suffixes.")
+
+(chezmoi--unchezmoi-source-file-name "~/.local/share/chezmoi/exact_help/dot_clojure/executable_literal_run_deps.edn.tmpl.literal.tmpl")
+"~/.local/share/chezmoi/help/.clojure/literal_run_deps.edn.literal.tmpl"
+(defun chezmoi--unchezmoi-source-file-name (source-file)
+  "Remove chezmoi attributes from SOURCE-FILE."
+  (let* ((base-name (file-name-base source-file))
+         (ext (file-name-extension source-file))
+         (base-name (if ext (file-name-with-extension base-name ext)
+                      base-name))
+         ;; TODO Handle ".literal" suffix properly.
+         (base-name (cl-reduce (lambda (s attr) (string-replace attr "" s))
+                               chezmoi--source-state-suffix-attrs
+                               :initial-value base-name))
+         (dir (file-name-directory source-file))
+         (dir (when dir (cl-reduce (lambda (s attr) (let ((replacement (if (string= "dot_" attr) "." "")))
+                                                 (string-replace attr replacement s)))
+                                   chezmoi--source-state-prefix-attrs
+                                   :initial-value dir)))
+         (stop-parsing nil)
+         attr)
+    (while (and (not stop-parsing) (setq attr (cl-some (lambda (attr) (when (string-prefix-p attr base-name) attr)) chezmoi--source-state-prefix-attrs)))
+      (when (string= "literal_" attr) (setq stop-parsing t))
+      (setq base-name (substring base-name (length attr)))
+      (when (string= "dot_" attr) (setq base-name (concat "." base-name))))
+
+    (file-name-concat dir base-name)))
+
+(defun chezmoi-target-file (source-file)
+  "Return the target file corresponding to SOURCE-FILE."
+  (let* ((to-find (chezmoi--unchezmoi-source-file-name source-file))
+         (potential-targets (cl-remove-if-not (lambda (f)
+                                                (let* ((dir (string-replace "~" "~/.local/share/chezmoi" (file-name-directory f)))
+                                                       (base (string-replace "." "" (file-name-base f)))
+                                                       (ext (file-name-extension f))
+                                                       (corrected-f (file-name-concat dir (if ext (file-name-with-extension base ext) base)))
+                                                       (trying (expand-file-name corrected-f)))
+                                                  (string= trying to-find)))
+                                              (chezmoi-managed-files))))
+    (cond ((zerop (length potential-targets)) (progn (message "No target found") nil))
+          ((not (= 1 (length potential-targets)))
+           (progn (message "Multiple targets found: %s. Using first" potential-targets)
+                  (cl-first potential-targets)))
+          (t (cl-first potential-targets)))))
 
 (defun chezmoi-managed ()
   "List all files and directories managed by chezmoi."
@@ -67,11 +133,11 @@
   "Run =chezmoi apply= on the TARGET-FILE.
 This overwrites the target with the source state."
   (interactive)
-  (if (= 0 (shell-command (if target-file
-                              (concat "chezmoi apply " target-file)
-                            (concat "chezmoi apply --source-path " buffer-file-name))))
-      (message "Wrote %s" target-file)
-    (message "Failed to write file")))
+  (let ((f (if target-file target-file buffer-file-name))
+        (cmd (if target-file "chezmoi apply " "chezmoi apply --source-path ")))
+    (if (= 0 (shell-command (concat cmd (shell-quote-argument f))))
+        (message "Wrote %s" f)
+      (message "Failed to write file"))))
 
 (defun chezmoi-diff (arg)
   "View output of =chezmoi diff= in a diff-buffer.
@@ -119,9 +185,7 @@ Note: Does not run =chezmoi edit="
                             (when mode (funcall mode)))
                           (message file)
                           (unless (member file (chezmoi-changed-files))
-                            (add-hook 'after-save-hook
-                                      (lambda () (chezmoi-write file)) 0 t))
-                          (setq-local chezmoi-buffer-target-file file))))
+                            (add-hook 'after-save-hook (lambda () (chezmoi-write nil)) 0 t)))))
 
 (defun chezmoi-ediff ()
   "Choose a dotfile to merge with its source using ediff.
@@ -151,7 +215,7 @@ Selected files are removed after they are selected."
 (defun chezmoi-write-from-target (target-file)
   "Apply the TARGET-FILE's state to the source file buffer.
 Useful for files which are autogenerated outside of chezmoi."
-  (interactive (list chezmoi-buffer-target-file))
+  (interactive (list (chezmoi-target-file buffer-file-name)))
   (with-current-buffer (find-file-noselect (chezmoi-source-file target-file))
     (replace-buffer-contents (find-file-noselect target-file))))
 
@@ -173,7 +237,7 @@ Useful for files which are autogenerated outside of chezmoi."
 (defun chezmoi-open-target ()
   "Open buffer's target file."
   (interactive)
-  (find-file chezmoi-buffer-target-file))
+  (find-file (chezmoi-target-file buffer-file-name)))
 
 (defun chezmoi-dired-add-marked-files ()
   "Add files marked in Dired to source state."
