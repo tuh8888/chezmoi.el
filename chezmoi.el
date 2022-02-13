@@ -79,7 +79,6 @@
     ".tmpl")
   "Source state attribute suffixes.")
 
-(chezmoi--unchezmoi-source-file-name "~/.local/share/chezmoi/exact_help/dot_clojure/executable_literal_run_deps.edn.tmpl.literal.tmpl")
 "~/.local/share/chezmoi/help/.clojure/literal_run_deps.edn.literal.tmpl"
 (defun chezmoi--unchezmoi-source-file-name (source-file)
   "Remove chezmoi attributes from SOURCE-FILE."
