@@ -43,11 +43,15 @@
   "Call F on the selected file from FILES, giving PROMPT."
   (funcall f (completing-read prompt files)))
 
+(defun chezmoi--shell-files (cmd)
+  "Helper function to parse files from CMD."
+  (let ((result (shell-command-to-string cmd)))
+    (split-string result "\n")))
+
 (defun chezmoi-source-file (target-file)
   "Return the source file corresponding to TARGET-FILE."
   (let* ((cmd (concat "chezmoi source-path " (when target-file (shell-quote-argument target-file))))
-         (result (shell-command-to-string cmd))
-         (files (split-string result "\n")))
+         (files (chezmoi--shell-files cmd)))
     (cl-first files)))
 
 (defvar chezmoi--source-state-prefix-attrs
@@ -121,8 +125,7 @@
 (defun chezmoi-managed ()
   "List all files and directories managed by chezmoi."
   (let* ((cmd "chezmoi managed")
-         (result (shell-command-to-string cmd))
-         (files (split-string result "\n")))
+         (files (chezmoi--shell-files cmd)))
     (cl-map 'list (lambda (file) (concat "~/" file)) files)))
 
 (defun chezmoi-managed-files ()
