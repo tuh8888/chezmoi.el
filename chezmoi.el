@@ -132,15 +132,20 @@
   "List only files managed by chezmoi."
   (cl-remove-if #'file-directory-p (chezmoi-managed)))
 
-(defun chezmoi-write (&optional target-file)
+(defun chezmoi-write (&optional arg target-file)
   "Run =chezmoi apply= on the TARGET-FILE.
-This overwrites the target with the source state."
-  (interactive)
-  (let ((f (if target-file target-file buffer-file-name))
-        (cmd (if target-file "chezmoi apply " "chezmoi apply --source-path ")))
-    (if (= 0 (shell-command (concat cmd (shell-quote-argument f))))
-        (message "Wrote %s" f)
-      (message "Failed to write file"))))
+This overwrites the target with the source state.
+With prefix ARG, use 'shell' to run command."
+  (interactive "P")
+  (let* ((f (if target-file target-file buffer-file-name))
+         (cmd (concat (if target-file "chezmoi apply " "chezmoi apply --source-path ") (shell-quote-argument f))))
+    (if (not arg)
+        (if (= 0 (shell-command cmd))
+            (message "Wrote %s" f)
+          (message "Failed to write file"))
+      (shell "*Chezmoi Shell*")
+      (insert cmd)
+      (comint-send-input))))
 
 (defun chezmoi-diff (arg)
   "View output of =chezmoi diff= in a diff-buffer.
