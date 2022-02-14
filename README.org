@@ -19,7 +19,7 @@ This package provides convenience functions for interacting with the [[https://c
 
   You can overwrite the target state file manually by calling ~chezmoi-write~ from within the buffer. Alternatively, you can overwrite the source state file with the content from the target state using ~chezmoi-write-from-target~. This can be performed for several files in a row using ~chezmoi-write-files~ and ~chezmoi-write-files-from-target~.
 
-  Quickly jump to the corresponding target file using ~chezmoi-open-target~.
+  Quickly jump to the corresponding target file or source file using ~chezmoi-open-other~.
 
 ** Comparing source and target states
 
@@ -63,7 +63,7 @@ This package provides convenience functions for interacting with the [[https://c
       "f d e" #'chezmoi-ediff
       "f d f" #'chezmoi-find
       "f d i" #'chezmoi-write-files-from-target
-      "f d o" #'chezmoi-open-target)
+      "f d o" #'chezmoi-open-other)
 
 
     ;; I find this hook useful for my emacs config files generated through org-tangle.
