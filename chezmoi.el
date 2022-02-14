@@ -108,7 +108,7 @@
   (let* ((to-find (chezmoi--unchezmoi-source-file-name source-file))
          (potential-targets (cl-remove-if-not (lambda (f)
                                                 (let* ((dir (string-replace "~" "~/.local/share/chezmoi" (file-name-directory f)))
-                                                       (base (string-replace "." "" (file-name-base f)))
+                                                       (base (file-name-base f))
                                                        (ext (file-name-extension f))
                                                        (corrected-f (file-name-concat dir (if ext (file-name-with-extension base ext) base)))
                                                        (trying (expand-file-name corrected-f)))
