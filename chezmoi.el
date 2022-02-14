@@ -103,7 +103,26 @@
 
     (file-name-concat dir base-name)))
 
+(defun chezmoi-version ()
+  "Get version number of chezmoi."
+  (let* ((s (cl-first (chezmoi--shell-files "chezmoi --version")))
+         (dev-re "\\(version \\(dev\\)\\)")
+         (v-re " \\(v\\(\\([0-9]+\\.\\)?\\([0-9]+\\.\\)?\\(\\*\\|[0-9]+\\)\\)\\)")
+         (re (concat dev-re "\\|" v-re)))
+    (when (string-match re s)
+      (or (match-string 4 s)
+          (match-string 2 s)))))
+
 (defun chezmoi-target-file (source-file)
+  "Return the target file corresponding to SOURCE-FILE."
+  (let ((v (chezmoi-version)))
+    (if (or (and v (string-match-p "^[0-9]" v) (version<= "2.11.2" v)) (string= "dev" v))
+        (let* ((cmd (concat "chezmoi target-path " (when source-file (shell-quote-argument source-file))))
+               (files (chezmoi--shell-files cmd)))
+          (cl-first files))
+      (list (chezmoi--manual-target-file source-file)))))
+
+(defun chezmoi--manual-target-file (source-file)
   "Return the target file corresponding to SOURCE-FILE."
   (let* ((to-find (chezmoi--unchezmoi-source-file-name source-file))
          (potential-targets (cl-remove-if-not (lambda (f)
