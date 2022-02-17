@@ -116,7 +116,7 @@
 (defun chezmoi-target-file (source-file)
   "Return the target file corresponding to SOURCE-FILE."
   (let ((v (chezmoi-version)))
-    (if (or (and v (string-match-p "^[0-9]" v) (version<= "2.11.3" v)) (string= "dev" v))
+    (if (or (and v (string-match-p "^[0-9]" v) (version<= "2.12.0" v)) (string= "dev" v))
         (let* ((cmd (concat "chezmoi target-path " (when source-file (shell-quote-argument source-file))))
                (files (chezmoi--shell-files cmd)))
           (cl-first files))
