@@ -2,6 +2,8 @@
 
 This package provides convenience functions for interacting with the [[https://chezmoi.io/][chezmoi]] dotfile management system via Emacs. These are mostly equivalents to functions like ~find-file~ and ~save-buffer~.
 
+[[https://melpa.org/#/chezmoi][file:https://melpa.org/packages/chezmoi-badge.svg]]
+
 * Installation
   Clone this repo or use a package manager. (Coming soon, installation via MELPA).
 
