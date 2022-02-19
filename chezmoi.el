@@ -154,8 +154,8 @@
 This overwrites the target with the source state.
 With prefix ARG, use 'shell' to run command."
   (interactive "P")
-  (let* ((f (if target-file target-file (buffer-file-name)))
-         (cmd (concat (if target-file "chezmoi apply " "chezmoi apply --source-path ") (shell-quote-argument f))))
+  (let* ((f (if target-file target-file (chezmoi-target-file (buffer-file-name))))
+         (cmd (concat "chezmoi apply " (shell-quote-argument f))))
     (if (not arg)
         (if (= 0 (shell-command cmd))
             (message "Wrote %s" f)
