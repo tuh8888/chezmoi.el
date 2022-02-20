@@ -37,6 +37,7 @@
 ;;; Code:
 
 (require 'magit)
+(require 'ediff)
 (require 'cl-lib)
 
 
