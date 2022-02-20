@@ -60,35 +60,13 @@
   :type '(choice string regexp)
   :group 'chezmoi)
 
-(defcustom chezmoi--template-error-regex ;; (pcre-to-elisp "chezmoi: template:")
+(defcustom chezmoi-template-error-regex ;; (pcre-to-elisp "chezmoi: template:")
   "chezmoi: template:"
   "Regex for detecting if chezmoi has encountered an error."
   :type '(choice string regexp)
   :group 'chezmoi)
 
-(defvar-local chezmoi--templates-displayed-p nil
-  "Whether all templates are currently displayed.")
-
-(defvar-local chezmoi--ediff-source-file nil
-  "Current ediff source-file.")
-
-
-(defun chezmoi--select-file (files prompt f)
-  "Call F on the selected file from FILES, giving PROMPT."
-  (funcall f (completing-read prompt files)))
-
-(defun chezmoi--shell-files (cmd)
-  "Helper function to parse files from CMD."
-  (let ((result (shell-command-to-string cmd)))
-    (split-string result "\n")))
-
-(defun chezmoi-source-file (target-file)
-  "Return the source file corresponding to TARGET-FILE."
-  (let* ((cmd (concat chezmoi-command " source-path " (when target-file (shell-quote-argument target-file))))
-         (files (chezmoi--shell-files cmd)))
-    (cl-first files)))
-
-(defvar-local chezmoi--source-state-prefix-attrs
+(defcustom chezmoi-source-state-prefix-attrs
   '("after_"
     "before_"
     "create_"
@@ -106,12 +84,37 @@
     "remove_"
     "run_"
     "symlink_")
-  "Source state attribute prefixes.")
+  "Source state attribute prefixes."
+  :type '(list)
+  :group 'chezmoi)
 
-(defvar chezmoi--source-state-suffix-attrs
+(defcustom chezmoi-source-state-suffix-attrs
   '(".literal"
     ".tmpl")
-  "Source state attribute suffixes.")
+  "Source state attribute suffixes."
+  :type '(list)
+  :group 'chezmoi)
+
+(defvar-local chezmoi--templates-displayed-p nil
+  "Whether all templates are currently displayed.")
+
+(defvar-local chezmoi--ediff-source-file nil
+  "Current ediff source-file.")
+
+(defun chezmoi--select-file (files prompt f)
+  "Call F on the selected file from FILES, giving PROMPT."
+  (funcall f (completing-read prompt files)))
+
+(defun chezmoi--shell-files (cmd)
+  "Helper function to parse files from CMD."
+  (let ((result (shell-command-to-string cmd)))
+    (split-string result "\n")))
+
+(defun chezmoi-source-file (target-file)
+  "Return the source file corresponding to TARGET-FILE."
+  (let* ((cmd (concat chezmoi-command " source-path " (when target-file (shell-quote-argument target-file))))
+         (files (chezmoi--shell-files cmd)))
+    (cl-first files)))
 
 (defun chezmoi--unchezmoi-source-file-name (source-file)
   "Remove chezmoi attributes from SOURCE-FILE."
@@ -119,18 +122,17 @@
          (ext (file-name-extension source-file))
          (base-name (if ext (file-name-with-extension base-name ext)
                       base-name))
-         ;; TODO Handle ".literal" suffix properly.
          (base-name (cl-reduce (lambda (s attr) (string-replace attr "" s))
-                               chezmoi--source-state-suffix-attrs
+                               chezmoi-source-state-suffix-attrs
                                :initial-value base-name))
          (dir (file-name-directory source-file))
          (dir (when dir (cl-reduce (lambda (s attr) (let ((replacement (if (string= "dot_" attr) "." "")))
                                                  (string-replace attr replacement s)))
-                                   chezmoi--source-state-prefix-attrs
+                                   chezmoi-source-state-prefix-attrs
                                    :initial-value dir)))
          (stop-parsing nil)
          attr)
-    (while (and (not stop-parsing) (setq attr (cl-some (lambda (attr) (when (string-prefix-p attr base-name) attr)) chezmoi--source-state-prefix-attrs)))
+    (while (and (not stop-parsing) (setq attr (cl-some (lambda (attr) (when (string-prefix-p attr base-name) attr)) chezmoi-source-state-prefix-attrs)))
       (when (string= "literal_" attr) (setq stop-parsing t))
       (setq base-name (substring base-name (length attr)))
       (when (string= "dot_" attr) (setq base-name (concat "." base-name))))
@@ -248,15 +250,20 @@ Note: Does not run =chezmoi edit=."
     (chezmoi-mode)
     source-file))
 
+(defun chezmoi-convert-template (template)
+  "Convert a TEMPLATE string using chezmoi'."
+  (let* ((cmd (concat chezmoi-command " execute-template " (shell-quote-argument template))))
+    (shell-command-to-string cmd)))
+
 (defun chezmoi--ediff-get-region-contents (n buf-type ctrl-buf &optional start end)
   "An overriding fn for `ediff-get-region-contents'.
 Converts and applies template diffs from the source-file."
   (ediff-with-current-buffer
       (ediff-with-current-buffer ctrl-buf (ediff-get-buffer buf-type))
     (if (string-equal chezmoi--ediff-source-file (buffer-file-name))
-        (chezmoi--convert-template (buffer-substring-no-properties
-                                    (or start (ediff-get-diff-posn buf-type 'beg n ctrl-buf))
-                                    (or end (ediff-get-diff-posn buf-type 'end n ctrl-buf))))
+        (chezmoi-convert-template (buffer-substring-no-properties
+                                   (or start (ediff-get-diff-posn buf-type 'beg n ctrl-buf))
+                                   (or end (ediff-get-diff-posn buf-type 'end n ctrl-buf))))
       (buffer-substring
        (or start (ediff-get-diff-posn buf-type 'beg n ctrl-buf))
        (or end (ediff-get-diff-posn buf-type 'end n ctrl-buf))))))
@@ -335,14 +342,9 @@ Useful for files which are autogenerated outside of chezmoi."
   "Hook for writing the source-file."
   (chezmoi-write nil))
 
-(defun chezmoi--convert-template (template)
-  "Convert a TEMPLATE string using chezmoi'."
-  (let* ((cmd (concat chezmoi-command " execute-template " (shell-quote-argument template))))
-    (shell-command-to-string cmd)))
-
 (defun chezmoi--put-display-value (start end value &optional object)
   "Display the VALUE from START to END in string or buffer OBJECT."
-  (unless (string-match-p chezmoi--template-error-regex value)
+  (unless (string-match-p chezmoi-template-error-regex value)
     (put-text-property start end 'display value object)
     (put-text-property start end 'chezmoi t object)
     (font-lock-flush start end)
@@ -372,7 +374,7 @@ the template value and BUFFER-OR-NAME."
         (let* ((start (match-beginning 0))
                (end (match-end 0))
                (template (substring string start end))
-               (value (chezmoi--convert-template template)))
+               (value (chezmoi-convert-template template)))
           (funcall f (1+ start) (1+ end) value buffer-or-name))))))
 
 (defun chezmoi--funcall-over-display-properties (f start buffer-or-name)
