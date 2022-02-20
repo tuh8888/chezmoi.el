@@ -9,19 +9,19 @@ This package provides convenience functions for interacting with the [[https://c
 
   Add keybindings to some functions. Or call using ~M-x <cmd>~.
 
- #+begin_src emacs-lisp :noweb yes
+  #+begin_src emacs-lisp :noweb yes
 (global-set-key (kbd "C-c C f")  #'chezmoi-find)
 (global-set-key (kbd "C-c C s")  #'chezmoi-write)
- #+end_src
+  #+end_src
 
 * Usage
 ** Editing files
 
-  One of the main goals of this package is to allow users to access their files managed by chezmoi and sync changes in the source state with the target state files that are used. Opening source state files is done using ~chezmoi-find~. This opens a buffer for the source state and adds a hook to sync it with the corresponding target state file when changes are saved. However, to prevent overwriting changes that were made to the target state file outside of the source state (such as by auto-generated content), this hook is only added when the source and target states are in sync at the time of opening.
+   One of the main goals of this package is to allow users to access their files managed by chezmoi and sync changes in the source state with the target state files that are used. Opening source state files is done using ~chezmoi-find~. This opens a buffer for the source state and adds a hook to sync it with the corresponding target state file when changes are saved. However, to prevent overwriting changes that were made to the target state file outside of the source state (such as by auto-generated content), this hook is only added when the source and target states are in sync at the time of opening.
 
-  You can overwrite the target state file manually by calling ~chezmoi-write~ from within the buffer. Alternatively, you can overwrite the source state file with the content from the target state using ~chezmoi-write-from-target~. This can be performed for several files in a row using ~chezmoi-write-files~ and ~chezmoi-write-files-from-target~.
+   You can overwrite the target state file manually by calling ~chezmoi-write~ from within the buffer. Alternatively, you can overwrite the source state file with the content from the target state using ~chezmoi-write-from-target~. This can be performed for several files in a row using ~chezmoi-write-files~ and ~chezmoi-write-files-from-target~.
 
-  Quickly jump to the corresponding target file or source file using ~chezmoi-open-other~.
+   Quickly jump to the corresponding target file or source file using ~chezmoi-open-other~.
 
 ** Comparing source and target states
 
@@ -35,17 +35,17 @@ This package provides convenience functions for interacting with the [[https://c
 
   Some functions provided are direct equivalents to common emacs functions.
 
-| Function     | chezmoi equivalent | chezmoi.el                 |
-|--------------+--------------------+----------------------------|
-| find-file    | chezmoi edit       | ~chezmoi\vertfind~         |
-| save-buffer  | chezmoi apply      | ~chezmoi\vertwrite~        |
-| diff         | chezmoi diff       | ~chezmoi\vertdiff~         |
-| ediff        | chezmoi merge      | ~chezmoi\vertediff~        |
-| magit-status | chezmoi git status | ~chezmoi\vertmagit-status~ |
+  | Function     | chezmoi equivalent | chezmoi.el                 |
+  |--------------+--------------------+----------------------------|
+  | find-file    | chezmoi edit       | ~chezmoi\vertfind~         |
+  | save-buffer  | chezmoi apply      | ~chezmoi\vertwrite~        |
+  | diff         | chezmoi diff       | ~chezmoi\vertdiff~         |
+  | ediff        | chezmoi merge      | ~chezmoi\vertediff~        |
+  | magit-status | chezmoi git status | ~chezmoi\vertmagit-status~ |
 
 * Configuration
 ** With Evil
-  #+begin_src emacs-lisp :noweb yes
+   #+begin_src emacs-lisp :noweb yes
 (defun chezmoi-evil ()
   (if chezmoi-mode
       (progn
@@ -55,12 +55,12 @@ This package provides convenience functions for interacting with the [[https://c
       (remove-hook 'evil-insert-state-entry-hook #'chezmoi--evil-insert-state-enter 1)
       (remove-hook 'evil-insert-state-exit-hook #'chezmoi--evil-insert-state-exit 1))))
 (add-hook 'chezmoi-mode-hook #'chezmoi-evil)
-  #+end_src
+   #+end_src
 
 ** Spacemacs layer
    Provided here is a sample layer for those who use Spacemacs. Add it by creating a Spacemacs layer called "chezmoi" and create a file in it called "packages.el" with the following code:
 
-  #+begin_src emacs-lisp :noweb yes
+   #+begin_src emacs-lisp :noweb yes
 (defconst chezmoi-packages
   '(
     chezmoi)
@@ -89,4 +89,4 @@ This package provides convenience functions for interacting with the [[https://c
     ;;                                                       (message (concat "Chezmoi: Wrote to target " file))
     ;;                                                     (message "Chezmoi: Failed to write file"))))))
     ))
-  #+end_src
+   #+end_src
