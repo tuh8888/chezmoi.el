@@ -43,10 +43,24 @@ This package provides convenience functions for interacting with the [[https://c
 | ediff        | chezmoi merge      | ~chezmoi\vertediff~        |
 | magit-status | chezmoi git status | ~chezmoi\vertmagit-status~ |
 
-* Spacemacs layer
-  Provided here is a sample layer for those who use Spacemacs. Add it by creating a Spacemacs layer called "chezmoi" and create a file in it called "packages.el" with the following code:
+* Configuration
+** With Evil
+  #+begin_src emacs-lisp :noweb yes
+(defun chezmoi-evil ()
+  (if chezmoi-mode
+      (progn
+        (add-hook 'evil-insert-state-entry-hook #'chezmoi--evil-insert-state-enter nil 1)
+        (add-hook 'evil-insert-state-exit-hook #'chezmoi--evil-insert-state-exit nil 1))
+    (progn
+      (remove-hook 'evil-insert-state-entry-hook #'chezmoi--evil-insert-state-enter 1)
+      (remove-hook 'evil-insert-state-exit-hook #'chezmoi--evil-insert-state-exit 1))))
+(add-hook 'chezmoi-mode-hook #'chezmoi-evil)
+  #+end_src
 
- #+begin_src emacs-lisp :noweb yes
+** Spacemacs layer
+   Provided here is a sample layer for those who use Spacemacs. Add it by creating a Spacemacs layer called "chezmoi" and create a file in it called "packages.el" with the following code:
+
+  #+begin_src emacs-lisp :noweb yes
 (defconst chezmoi-packages
   '(
     chezmoi)
@@ -75,4 +89,4 @@ This package provides convenience functions for interacting with the [[https://c
     ;;                                                       (message (concat "Chezmoi: Wrote to target " file))
     ;;                                                     (message "Chezmoi: Failed to write file"))))))
     ))
- #+end_src
+  #+end_src

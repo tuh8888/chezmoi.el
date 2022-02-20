@@ -403,18 +403,12 @@ START is passed to `chezmoi--funcall-over-display-properties'."
           (add-hook 'after-save-hook #'chezmoi--write-hook 0 t))
         (add-hook 'after-change-functions #'chezmoi--after-change nil 1)
 
-        ;; (add-hook 'evil-insert-state-entry-hook #'chezmoi--evil-insert-state-enter nil 1)
-        ;; (add-hook 'evil-insert-state-exit-hook #'chezmoi--evil-insert-state-exit nil 1)
-
         (font-lock-add-keywords nil (chezmoi-font-lock-keywords) 'append)
         (chezmoi-display-templates t)
         (font-lock-ensure (point-min) (point-max)))
     (progn
       (remove-hook 'after-save-hook #'chezmoi--write-hook t)
       (remove-hook 'after-change-functions #'chezmoi--after-change 1)
-
-      ;; (remove-hook 'evil-insert-state-entry-hook #'chezmoi--evil-insert-state-enter 1)
-      ;; (remove-hook 'evil-insert-state-exit-hook #'chezmoi--evil-insert-state-exit 1)
 
       (font-lock-remove-keywords nil (chezmoi-font-lock-keywords))
       (chezmoi-display-templates nil)
