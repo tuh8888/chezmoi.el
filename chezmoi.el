@@ -159,7 +159,7 @@ With prefix ARG, use 'shell' to run command."
     (if (not arg)
         (if (= 0 (shell-command cmd))
             (message "Wrote %s" f)
-          (message "Failed to write file"))
+          (message "Failed to write file. Use chezmoi-write with prefix arg to resolve with chezmoi."))
       (shell "*Chezmoi Shell*")
       (insert cmd)
       (comint-send-input))))
