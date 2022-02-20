@@ -403,7 +403,7 @@ START is passed to `chezmoi--funcall-over-display-properties'."
         ;; (add-hook 'evil-insert-state-entry-hook #'chezmoi--evil-insert-state-enter nil 1)
         ;; (add-hook 'evil-insert-state-exit-hook #'chezmoi--evil-insert-state-exit nil 1)
 
-        (font-lock-add-keywords nil `((,chezmoi-template-regex . 'chezmoi-template-face))
+        (font-lock-add-keywords nil `((,chezmoi-template-regex 0 'chezmoi-template-face prepend))
                                 'append)
         (chezmoi-display-templates t)
         (font-lock-ensure (point-min) (point-max)))
