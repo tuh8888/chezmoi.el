@@ -430,16 +430,6 @@ START is passed to `chezmoi--funcall-over-display-properties'."
   (chezmoi-display-buffer-templates nil)
   (chezmoi-display-buffer-templates t))
 
-(defun chezmoi--evil-insert-state-enter ()
-  "Run after evil-insert-state-entry."
-  (chezmoi-display-buffer-templates nil (point))
-  (remove-hook 'after-change-functions #'chezmoi--after-change 1))
-
-(defun chezmoi--evil-insert-state-exit ()
-  "Run after evil-insert-state-exit."
-  (chezmoi--after-change nil nil nil)
-  (add-hook 'after-change-functions #'chezmoi--after-change nil 1))
-
 (defun chezmoi-font-lock-keywords ()
   "Keywords for font lock."
   `((,chezmoi-template-regex 0 'chezmoi-template-face prepend)))

@@ -14,6 +14,8 @@ This package provides convenience functions for interacting with the [[https://c
 (global-set-key (kbd "C-c C s")  #'chezmoi-write)
   #+end_src
 
+  You can manually call ~M-x chezmoi-mode~ in a source file buffer to turn on/of syncronization and template rendering (see [[Templates]]). When using ~chezmoi-find~ or ~chezmoi-ediff~, ~chezmoi-mode~ will be turned on for you in the source file's buffer.
+
 * Usage
 ** Editing files
 
@@ -43,9 +45,31 @@ This package provides convenience functions for interacting with the [[https://c
   | ediff        | chezmoi merge      | ~chezmoi\vertediff~        |
   | magit-status | chezmoi git status | ~chezmoi\vertmagit-status~ |
 
-* Configuration
+* Templates
+
+  Chezmoi.el provides a minor mode for displaying the values of chezmoi template strings as overlays in source file buffers. You can toggle their display with ~M-x chezmoi-display-buffer-templates~ or with a configuration variable:
+
+  #+begin_src emacs-lisp :noweb yes
+(setq chezmoi-display-templates t) ;; Display template values in all source buffers.
+(setq chezmoi-display-templates nil) ;; Don't display template values.
+  #+end_src
+
 ** With Evil
+
+   Integrate with evil mode by toggling  template display when entering insert mode.
+
    #+begin_src emacs-lisp :noweb yes
+(defun chezmoi--evil-insert-state-enter ()
+  "Run after evil-insert-state-entry."
+  (chezmoi-display-buffer-templates nil (point))
+  (remove-hook 'after-change-functions #'chezmoi--after-change 1))
+
+(defun chezmoi--evil-insert-state-exit ()
+  "Run after evil-insert-state-exit."
+  (chezmoi-display-buffer-templates nil)
+  (chezmoi-display-buffer-templates t)
+  (add-hook 'after-change-functions #'chezmoi--after-change nil 1))
+
 (defun chezmoi-evil ()
   (if chezmoi-mode
       (progn
@@ -57,7 +81,19 @@ This package provides convenience functions for interacting with the [[https://c
 (add-hook 'chezmoi-mode-hook #'chezmoi-evil)
    #+end_src
 
+* Configuration
+** Ligatures
+
+   Ligatures don't seem to play nice with overlaid text.
+
+   #+begin_src emacs-lisp :noweb yes
+;; Turn off ligatures because they show up poorly.
+(add-hook 'chezmoi-mode-hook #'(lambda () (when (require 'ligature)
+                                            (ligature-mode (if chezmoi-mode 0 1)))))
+   #+end_src
+
 ** Spacemacs layer
+
    Provided here is a sample layer for those who use Spacemacs. Add it by creating a Spacemacs layer called "chezmoi" and create a file in it called "packages.el" with the following code:
 
    #+begin_src emacs-lisp :noweb yes
@@ -67,37 +103,49 @@ This package provides convenience functions for interacting with the [[https://c
   "The list of Lisp packages required by the chezmoi layer.")
 
 
-(use-package chezmoi
-  :init
-  (spacemacs/declare-prefix "f d" "chezmoi")
+(defun chezmoi/init-chezmoi ()
+  (use-package chezmoi
+    :init
+    (spacemacs/declare-prefix "f d" "chezmoi")
 
-  (spacemacs/set-leader-keys
-    "f d s" #'chezmoi-write
-    "f d g" #'chezmoi-magit-status
-    "f d d" #'chezmoi-diff
-    "f d e" #'chezmoi-ediff
-    "f d f" #'chezmoi-find
-    "f d i" #'chezmoi-write-files-from-target
-    "f d o" #'chezmoi-open-other
-    "f d t" #'chezmoi-display-buffer-templates)
+    (spacemacs/set-leader-keys
+      "f d s" #'chezmoi-write
+      "f d g" #'chezmoi-magit-status
+      "f d d" #'chezmoi-diff
+      "f d e" #'chezmoi-ediff
+      "f d f" #'chezmoi-find
+      "f d i" #'chezmoi-write-files-from-target
+      "f d o" #'chezmoi-open-other
+      "f d c" #'chezmoi-mode)
 
-  (defun chezmoi-evil ()
-    (if chezmoi-mode
-        (progn
-          (add-hook 'evil-insert-state-entry-hook #'chezmoi--evil-insert-state-enter nil 1)
-          (add-hook 'evil-insert-state-exit-hook #'chezmoi--evil-insert-state-exit nil 1))
-      (progn
-        (remove-hook 'evil-insert-state-entry-hook #'chezmoi--evil-insert-state-enter 1)
-        (remove-hook 'evil-insert-state-exit-hook #'chezmoi--evil-insert-state-exit 1))))
-  (add-hook 'chezmoi-mode-hook #'chezmoi-evil)
+    (when (equalp dotspacemacs-editing-style 'vim)
+      (defun chezmoi--evil-insert-state-enter ()
+        "Run after evil-insert-state-entry."
+        (chezmoi-display-buffer-templates nil (point))
+        (remove-hook 'after-change-functions #'chezmoi--after-change 1))
 
-  ;; Turn off ligatures because they show up poorly.
-  (add-hook 'chezmoi-mode-hook #'(lambda () (when (require 'ligature)
-                                         (ligature-mode (if chezmoi-mode 0 1)))))
+      (defun chezmoi--evil-insert-state-exit ()
+        "Run after evil-insert-state-exit."
+        (chezmoi-display-buffer-templates nil)
+        (chezmoi-display-buffer-templates t)
+        (add-hook 'after-change-functions #'chezmoi--after-change nil 1))
 
-  ;; I find this hook useful for my emacs config files generated through org-tangle.
-  (defun chezmoi-org-babel-tangle ()
-    (let ((file (buffer-file-name)))
-      (chezmoi-write nil (chezmoi-target-file (buffer-file-name)))))
-  (add-hook 'org-babel-post-tangle-hook #'chezmoi-org-babel-tangle))
+      (defun chezmoi-evil ()
+        (if chezmoi-mode
+            (progn
+              (add-hook 'evil-insert-state-entry-hook #'chezmoi--evil-insert-state-enter nil 1)
+              (add-hook 'evil-insert-state-exit-hook #'chezmoi--evil-insert-state-exit nil 1))
+          (progn
+            (remove-hook 'evil-insert-state-entry-hook #'chezmoi--evil-insert-state-enter 1)
+            (remove-hook 'evil-insert-state-exit-hook #'chezmoi--evil-insert-state-exit 1))))
+      (add-hook 'chezmoi-mode-hook #'chezmoi-evil))
+
+    ;; Turn off ligatures cuz they look bad.
+    (add-hook 'chezmoi-mode-hook #'(lambda () (ligature-mode (if chezmoi-mode 0 1))))
+
+    ;; I find this hook useful for my emacs config files generated through org-tangle.
+    (defun chezmoi-org-babel-tangle ()
+      (let ((file (buffer-file-name)))
+        (chezmoi-write nil (chezmoi-target-file (buffer-file-name)))))
+    (add-hook 'org-babel-post-tangle-hook #'chezmoi-org-babel-tangle)))
    #+end_src
