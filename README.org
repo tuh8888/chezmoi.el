@@ -4,6 +4,11 @@ This package provides convenience functions for interacting with the [[https://c
 
 [[https://melpa.org/#/chezmoi][file:https://melpa.org/packages/chezmoi-badge.svg]]
 
+
+ [[file:resources/chezmoi-template-recording.gif]]
+
+The recording above demonstrates editing a chezmoi template with source file on left, command log on top right, and associated target file on bottom right.
+
 * Installation
   Clone this repo or use a package manager.
 
@@ -51,9 +56,7 @@ This package provides convenience functions for interacting with the [[https://c
 
 * Templates
 
- [[file:resources/chezmoi-template-recording.gif]]
-
-  Chezmoi.el provides a minor mode for displaying the values of chezmoi template strings as overlays in source file buffers. You can toggle their display with ~M-x chezmoi-display-buffer-templates~ or with a configuration variable:
+  Chezmoi.el provides a minor mode for displaying the values of [[https://www.chezmoi.io/user-guide/templating/][chezmoi template]] strings as overlays in source file buffers. You can toggle their display with ~M-x chezmoi-display-buffer-templates~ or with a configuration variable:
 
   #+begin_src emacs-lisp :noweb yes
 (setq chezmoi-display-templates t) ;; Display template values in all source buffers.
