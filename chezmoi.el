@@ -391,6 +391,9 @@ START is passed to `chezmoi--funcall-over-display-properties'."
   (chezmoi--after-change nil nil nil)
   (add-hook 'after-change-functions #'chezmoi--after-change nil 1))
 
+(defun chezmoi-font-lock-keywords ()
+  `((,chezmoi-template-regex 0 'chezmoi-template-face prepend)))
+
 (define-minor-mode chezmoi-mode
   "Chezmoi mode for source files."
   :group 'chezmoi
@@ -403,8 +406,7 @@ START is passed to `chezmoi--funcall-over-display-properties'."
         ;; (add-hook 'evil-insert-state-entry-hook #'chezmoi--evil-insert-state-enter nil 1)
         ;; (add-hook 'evil-insert-state-exit-hook #'chezmoi--evil-insert-state-exit nil 1)
 
-        (font-lock-add-keywords nil `((,chezmoi-template-regex 0 'chezmoi-template-face prepend))
-                                'append)
+        (font-lock-add-keywords nil (chezmoi-font-lock-keywords) 'append)
         (chezmoi-display-templates t)
         (font-lock-ensure (point-min) (point-max)))
     (progn
@@ -414,7 +416,7 @@ START is passed to `chezmoi--funcall-over-display-properties'."
       ;; (remove-hook 'evil-insert-state-entry-hook #'chezmoi--evil-insert-state-enter 1)
       ;; (remove-hook 'evil-insert-state-exit-hook #'chezmoi--evil-insert-state-exit 1)
 
-      (font-lock-remove-keywords nil `((,chezmoi-template-regex . 'chezmoi-template-face)))
+      (font-lock-remove-keywords nil (chezmoi-font-lock-keywords))
       (chezmoi-display-templates nil)
       (font-lock-ensure (point-min) (point-max)))))
 
