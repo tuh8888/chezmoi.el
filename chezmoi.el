@@ -50,6 +50,11 @@
   :type '(string)
   :group 'chezmoi)
 
+(defcustom chezmoi-display-templates t
+  "Whether to display templates."
+  :type '(boolean)
+  :group 'chezmoi)
+
 (defface chezmoi-template-face '((t (:underline t :inherit font-lock-constant-face)))
   "Face for displaying chezmoi templates values."
   :group 'chezmoi)
@@ -397,20 +402,23 @@ When START is non-nil, find only the region around START."
                     (setq end (next-single-property-change start 'chezmoi buf)))
           (funcall f start end buffer-or-name))))))
 
-(defun chezmoi-display-templates (&optional display-p start buffer-or-name)
+(defun chezmoi-display-buffer-templates (&optional display-p start buffer-or-name)
   "Display templates found in BUFFER-OR-NAME.
 If called interactively, toggle display of templates in current buffer.
 Use DISPLAY-P to set display of templates on or off.
 START is passed to `chezmoi--funcall-over-display-properties'."
-  (interactive (list (not chezmoi--templates-displayed-p)
+  (interactive (list (let ((display-p (not chezmoi--templates-displayed-p)))
+                       (setq-local chezmoi-display-templates display-p)
+                       display-p)
                      nil))
   (remove-hook 'after-change-functions #'chezmoi--after-change 1)
 
   (let* ((buffer-or-name (or buffer-or-name (current-buffer)))
          (was-modified-p (buffer-modified-p buffer-or-name)))
-    (setq chezmoi--templates-displayed-p display-p)
+    (setq chezmoi--templates-displayed-p (and display-p chezmoi-display-templates))
     (if chezmoi--templates-displayed-p
-        (chezmoi--funcall-over-matches #'chezmoi--put-display-value buffer-or-name)
+        (when chezmoi-display-templates
+          (chezmoi--funcall-over-matches #'chezmoi--put-display-value buffer-or-name))
       (chezmoi--funcall-over-display-properties #'chezmoi--remove-display-value start buffer-or-name))
     (unless was-modified-p (with-current-buffer buffer-or-name
                              (set-buffer-modified-p nil))))
@@ -419,12 +427,12 @@ START is passed to `chezmoi--funcall-over-display-properties'."
 
 (defun chezmoi--after-change (_ _ _)
   "Refresh templates after each change."
-  (chezmoi-display-templates nil)
-  (chezmoi-display-templates t))
+  (chezmoi-display-buffer-templates nil)
+  (chezmoi-display-buffer-templates t))
 
 (defun chezmoi--evil-insert-state-enter ()
   "Run after evil-insert-state-entry."
-  (chezmoi-display-templates nil (point))
+  (chezmoi-display-buffer-templates nil (point))
   (remove-hook 'after-change-functions #'chezmoi--after-change 1))
 
 (defun chezmoi--evil-insert-state-exit ()
@@ -446,10 +454,10 @@ START is passed to `chezmoi--funcall-over-display-properties'."
         (add-hook 'after-change-functions #'chezmoi--after-change nil 1)
 
         (font-lock-add-keywords nil (chezmoi-font-lock-keywords) 'append)
-        (chezmoi-display-templates t)
+        (chezmoi-display-buffer-templates t)
         (font-lock-ensure (point-min) (point-max)))
     (progn
-      (chezmoi-display-templates nil)
+      (chezmoi-display-buffer-templates nil)
 
       (remove-hook 'after-save-hook #'chezmoi--write-hook t)
       (remove-hook 'after-change-functions #'chezmoi--after-change t)
