@@ -5,7 +5,11 @@ This package provides convenience functions for interacting with the [[https://c
 [[https://melpa.org/#/chezmoi][file:https://melpa.org/packages/chezmoi-badge.svg]]
 
 * Installation
-  Clone this repo or use a package manager. (Coming soon, installation via MELPA).
+  Clone this repo or use a package manager.
+
+  #+begin_src emacs-lisp :noweb yes
+(use-package chezmoi)
+  #+end_src
 
   Add keybindings to some functions. Or call using ~M-x <cmd>~.
 
