@@ -69,6 +69,10 @@
 (defvar-local chezmoi--templates-displayed-p nil
   "Whether all templates are currently displayed.")
 
+(defvar-local chezmoi--ediff-source-file nil
+  "Current ediff source-file.")
+
+
 (defun chezmoi--select-file (files prompt f)
   "Call F on the selected file from FILES, giving PROMPT."
   (funcall f (completing-read prompt files)))
@@ -233,14 +237,33 @@ Note: Does not run =chezmoi edit=."
           "Select a dotfile to edit: "
           (chezmoi-managed-files)
           nil t)))
-  (find-file (chezmoi-source-file file))
-  (let ((mode (assoc-default
-               (file-name-nondirectory file)
-               auto-mode-alist
-               'string-match)))
-    (when mode (funcall mode)))
-  (message file)
-  (chezmoi-mode))
+  (let ((source-file (chezmoi-source-file file)))
+    (find-file source-file)
+    (let ((mode (assoc-default
+                 (file-name-nondirectory file)
+                 auto-mode-alist
+                 'string-match)))
+      (when mode (funcall mode)))
+    (message file)
+    (chezmoi-mode)
+    source-file))
+
+(defun chezmoi--ediff-get-region-contents (n buf-type ctrl-buf &optional start end)
+  "An overriding fn for `ediff-get-region-contents'.
+Converts and applies template diffs from the source-file."
+  (ediff-with-current-buffer
+      (ediff-with-current-buffer ctrl-buf (ediff-get-buffer buf-type))
+    (if (string-equal chezmoi--ediff-source-file (buffer-file-name))
+        (chezmoi--convert-template (buffer-substring-no-properties
+                                    (or start (ediff-get-diff-posn buf-type 'beg n ctrl-buf))
+                                    (or end (ediff-get-diff-posn buf-type 'end n ctrl-buf))))
+      (buffer-substring
+       (or start (ediff-get-diff-posn buf-type 'beg n ctrl-buf))
+       (or end (ediff-get-diff-posn buf-type 'end n ctrl-buf))))))
+
+(defun chezmoi--remove-ediff-get-region-contents ()
+  "Remove advice overriding `ediff-get-region-contents'."
+  (advice-remove 'ediff-get-region-contents #'chezmoi--ediff-get-region-contents))
 
 (defun chezmoi-ediff (dotfile)
   "Choose a DOTFILE to merge with its source using `ediff'.
@@ -250,7 +273,11 @@ Note: Does not run =chezmoi merge=."
           "Select a dotfile to merge: "
           (chezmoi-changed-files)
           nil t)))
-  (ediff-files (chezmoi-source-file dotfile) dotfile))
+  (let ((source-file (chezmoi-find dotfile)))
+    (advice-add 'ediff-get-region-contents :override #'chezmoi--ediff-get-region-contents)
+    (setq chezmoi--ediff-source-file source-file)
+    (ediff-files source-file dotfile)
+    (add-hook 'ediff-quit-hook #'chezmoi--remove-ediff-get-region-contents nil t)))
 
 (defun chezmoi-magit-status ()
   "Show the status of the chezmoi source repository."
@@ -373,11 +400,16 @@ START is passed to `chezmoi--funcall-over-display-properties'."
   (interactive (list (not chezmoi--templates-displayed-p)
                      nil))
   (remove-hook 'after-change-functions #'chezmoi--after-change 1)
-  (let ((buffer-or-name (or buffer-or-name (current-buffer))))
+
+  (let* ((buffer-or-name (or buffer-or-name (current-buffer)))
+         (was-modified-p (buffer-modified-p buffer-or-name)))
     (setq chezmoi--templates-displayed-p display-p)
     (if chezmoi--templates-displayed-p
         (chezmoi--funcall-over-matches #'chezmoi--put-display-value buffer-or-name)
-      (chezmoi--funcall-over-display-properties #'chezmoi--remove-display-value start buffer-or-name)))
+      (chezmoi--funcall-over-display-properties #'chezmoi--remove-display-value start buffer-or-name))
+    (unless was-modified-p (with-current-buffer buffer-or-name
+                             (set-buffer-modified-p nil))))
+
   (add-hook 'after-change-functions #'chezmoi--after-change nil 1))
 
 (defun chezmoi--after-change (_ _ _)
@@ -412,11 +444,12 @@ START is passed to `chezmoi--funcall-over-display-properties'."
         (chezmoi-display-templates t)
         (font-lock-ensure (point-min) (point-max)))
     (progn
+      (chezmoi-display-templates nil)
+
       (remove-hook 'after-save-hook #'chezmoi--write-hook t)
-      (remove-hook 'after-change-functions #'chezmoi--after-change 1)
+      (remove-hook 'after-change-functions #'chezmoi--after-change t)
 
       (font-lock-remove-keywords nil (chezmoi-font-lock-keywords))
-      (chezmoi-display-templates nil)
       (font-lock-ensure (point-min) (point-max)))))
 
 (provide 'chezmoi)
