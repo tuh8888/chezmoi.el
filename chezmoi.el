@@ -116,6 +116,16 @@
          (files (chezmoi--shell-files cmd)))
     (cl-first files)))
 
+(defun chezmoi-version ()
+  "Get version number of chezmoi."
+  (let* ((s (cl-first (chezmoi--shell-files (concat chezmoi-command " --version"))))
+         (dev-re "\\(version \\(dev\\)\\)")
+         (v-re " \\(v\\(\\([0-9]+\\.\\)?\\([0-9]+\\.\\)?\\(\\*\\|[0-9]+\\)\\)\\)")
+         (re (concat dev-re "\\|" v-re)))
+    (when (string-match re s)
+      (or (match-string 4 s)
+          (match-string 2 s)))))
+
 (defun chezmoi--unchezmoi-source-file-name (source-file)
   "Remove chezmoi attributes from SOURCE-FILE."
   (let* ((base-name (file-name-base source-file))
@@ -139,25 +149,6 @@
 
     (file-name-concat dir base-name)))
 
-(defun chezmoi-version ()
-  "Get version number of chezmoi."
-  (let* ((s (cl-first (chezmoi--shell-files (concat chezmoi-command " --version"))))
-         (dev-re "\\(version \\(dev\\)\\)")
-         (v-re " \\(v\\(\\([0-9]+\\.\\)?\\([0-9]+\\.\\)?\\(\\*\\|[0-9]+\\)\\)\\)")
-         (re (concat dev-re "\\|" v-re)))
-    (when (string-match re s)
-      (or (match-string 4 s)
-          (match-string 2 s)))))
-
-(defun chezmoi-target-file (source-file)
-  "Return the target file corresponding to SOURCE-FILE."
-  (let ((v (chezmoi-version)))
-    (if (or (and v (string-match-p "^[0-9]" v) (version<= "2.12.0" v)) (string= "dev" v))
-        (let* ((cmd (concat chezmoi-command " target-path " (when source-file (shell-quote-argument source-file))))
-               (files (chezmoi--shell-files cmd)))
-          (cl-first files))
-      (list (chezmoi--manual-target-file source-file)))))
-
 (defun chezmoi--manual-target-file (source-file)
   "Return the target file corresponding to SOURCE-FILE."
   (let* ((to-find (chezmoi--unchezmoi-source-file-name source-file))
@@ -174,6 +165,17 @@
            (progn (message "Multiple targets found: %s. Using first" potential-targets)
                   (cl-first potential-targets)))
           (t (cl-first potential-targets)))))
+
+(make-obsolete-variable 'chezmoi--manual-target-file 'chezmoi-target-file "0.0.1")
+
+(defun chezmoi-target-file (source-file)
+  "Return the target file corresponding to SOURCE-FILE."
+  (let ((v (chezmoi-version)))
+    (if (or (and v (string-match-p "^[0-9]" v) (version<= "2.12.0" v)) (string= "dev" v))
+        (let* ((cmd (concat chezmoi-command " target-path " (when source-file (shell-quote-argument source-file))))
+               (files (chezmoi--shell-files cmd)))
+          (cl-first files))
+      (chezmoi--manual-target-file source-file))))
 
 (defun chezmoi-managed ()
   "List all files and directories managed by chezmoi."
