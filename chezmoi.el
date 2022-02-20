@@ -192,34 +192,36 @@ If ARG is non-nil, switch to the diff-buffer."
             (push (concat "~" file-name) files)))
         files))))
 
-(defun chezmoi-find ()
-  "Edit a source file managed by chezmoi.
+(defun chezmoi-find (file)
+  "Edit a source FILE managed by chezmoi.
 If the target file has the same state as the source file,add a hook to
 'save-buffer' that applies the source state to the target state. This way, when
 the buffer editing the source state is saved the target state is kept in sync.
 Note: Does not run =chezmoi edit="
-  (interactive)
-  (chezmoi--select-file (chezmoi-managed-files)
-                        "Select a dotfile to edit: "
-                        (lambda (file)
-                          (find-file (chezmoi-source-file file))
-                          (let ((mode (assoc-default
-                                       (file-name-nondirectory file)
-                                       auto-mode-alist
-                                       'string-match)))
-                            (when mode (funcall mode)))
-                          (message file)
-                          (unless (member file (chezmoi-changed-files))
-                            (add-hook 'after-save-hook (lambda () (chezmoi-write nil)) 0 t)))))
+  (interactive
+   (list (completing-read
+          "Select a dotfile to edit: "
+          (chezmoi-managed-files)
+          nil t)))
+  (find-file (chezmoi-source-file file))
+  (let ((mode (assoc-default
+               (file-name-nondirectory file)
+               auto-mode-alist
+               'string-match)))
+    (when mode (funcall mode)))
+  (message file)
+  (unless (member file (chezmoi-changed-files))
+    (add-hook 'after-save-hook (lambda () (chezmoi-write nil)) 0 t)))
 
-(defun chezmoi-ediff ()
-  "Choose a dotfile to merge with its source using ediff.
+(defun chezmoi-ediff (dotfile)
+  "Choose a DOTFILE to merge with its source using ediff.
 Note: Does not run =chezmoi merge=."
-  (interactive)
-  (chezmoi--select-file (chezmoi-changed-files)
-                        "Select a dotfile to merge: "
-                        (lambda (file)
-                          (ediff-files (chezmoi-source-file file) file))))
+  (interactive
+   (list (completing-read
+          "Select a dotfile to merge: "
+          (chezmoi-changed-files)
+          nil t)))
+   (ediff-files (chezmoi-source-file dotfile) dotfile))
 
 (defun chezmoi-magit-status ()
   "Show the status of the chezmoi source repository."
