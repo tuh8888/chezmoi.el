@@ -186,8 +186,8 @@ The recording above demonstrates editing a chezmoi template with source file on 
       (add-hook 'chezmoi-mode-hook #'chezmoi-evil))
 
     (add-hook 'chezmoi-mode-hook #'(lambda () (if chezmoi-mode
-                                                  (add-to-list 'company-backends 'chezmoi-company-backend)
-                                                (delete 'chezmoi-company-backend 'company-backends))))
+                                             (add-to-list 'company-backends 'chezmoi-company-backend)
+                                           (setq company-backends (delete 'chezmoi-company-backend company-backends)))))
 
     ;; Turn off ligatures cuz they look bad.
     (add-hook 'chezmoi-mode-hook #'(lambda () (ligature-mode (if chezmoi-mode 0 1))))

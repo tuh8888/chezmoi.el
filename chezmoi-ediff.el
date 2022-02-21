@@ -42,7 +42,7 @@ Converts and applies template diffs from the source-file."
   (ediff-with-current-buffer
       (ediff-with-current-buffer ctrl-buf (ediff-get-buffer buf-type))
     (if (string-equal chezmoi-ediff--source-file (buffer-file-name))
-        (chezmoi-execute-template (buffer-substring-no-properties
+        (chezmoi-template-execute (buffer-substring-no-properties
                                    (or start (ediff-get-diff-posn buf-type 'beg n ctrl-buf))
                                    (or end (ediff-get-diff-posn buf-type 'end n ctrl-buf))))
       (buffer-substring
