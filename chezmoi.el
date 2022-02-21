@@ -87,10 +87,6 @@
   :type '(list)
   :group 'chezmoi)
 
-(defun chezmoi--select-file (files prompt f)
-  "Call F on the selected file from FILES, giving PROMPT."
-  (funcall f (completing-read prompt files)))
-
 (defun chezmoi--shell-files (cmd)
   "Helper function to parse files from CMD."
   (let ((result (shell-command-to-string cmd)))
@@ -241,13 +237,10 @@ Note: Does not run =chezmoi edit=."
 (defun chezmoi--select-files (files prompt f)
   "Iteratively select file from FILES given PROMPT and apply F to each selected.
 Selected files are removed after they are selected."
-  (let ((files (cl-copy-list files)))
-    (while files
-      (chezmoi--select-file files
-                            (concat prompt " (C-g to stop): ")
-                            (lambda (file)
-                              (funcall f file)
-                              (setq files (remove file files)))))))
+  (let (file)
+    (while (setq file (completing-read (concat prompt " (C-g to stop): ") files))
+      (funcall f file)
+      (setq files (remove file files)))))
 
 (defun chezmoi-write-from-target (target-file)
   "Apply the TARGET-FILE's state to the source file buffer.
