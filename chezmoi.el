@@ -282,7 +282,7 @@ Note: Does not run =chezmoi edit=."
                                        (assoc-default auto-mode-alist 'string-match))))
           (funcall mode))
         (message target-file)
-        (chezmoi-mode)
+        (unless chezmoi-mode (chezmoi-mode))
         source-file))))
 
 (defun chezmoi-sync-files (files &optional arg)
