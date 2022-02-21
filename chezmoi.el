@@ -49,7 +49,7 @@
   :type '(string)
   :group 'chezmoi)
 
-(defcustom chezmoi-display-templates t
+(defcustom chezmoi-display-templates nil
   "Whether to display templates."
   :type '(boolean)
   :group 'chezmoi)
