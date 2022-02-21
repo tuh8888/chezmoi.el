@@ -98,6 +98,56 @@
         (unless (string-prefix-p "chezmoi:" s)
           (split-string (string-trim s) "\n"))))))
 
+(defun chezmoi-managed ()
+  "List all files and directories managed by chezmoi."
+  (thread-last "managed"
+               chezmoi--dispatch
+               (cl-map 'list (lambda (file) (concat "~/" file)))))
+
+(defun chezmoi-managed-files ()
+  "List only files managed by chezmoi."
+  (thread-last (chezmoi-managed)
+               (cl-remove-if #'file-directory-p)))
+
+(defun chezmoi-target-file-p (file)
+  "Return non-nil if FILE is in the target state."
+  (thread-last (chezmoi-managed-files)
+               (cl-mapcar #'expand-file-name)
+               (member file)))
+
+(defun chezmoi-diff (arg)
+  "View output of =chezmoi diff= in a diff-buffer.
+If ARG is non-nil, switch to the diff-buffer."
+  (interactive "i")
+  (let ((b (get-buffer-create "*chezmoi-diff*")))
+    (with-current-buffer b
+      (erase-buffer)
+      (shell-command (concat chezmoi-command " diff") b))
+    (unless arg
+      (switch-to-buffer b)
+      (diff-mode)
+      (whitespace-mode 0))
+    b))
+
+(defun chezmoi-changed-files ()
+  "Use chezmoi diff to return the files that have changed."
+  (with-current-buffer (chezmoi-diff t)
+    (goto-char (point-max))
+    (let (files line-beg)
+      (while (setq line-beg (re-search-backward "^\\+\\{3\\} .*" nil t))
+        (let ((file-name (thread-first line-beg
+                                       (buffer-substring-no-properties (line-end-position))
+                                       (substring 5))))
+          (push (concat "~" file-name) files)))
+      files)))
+
+(defun chezmoi-changed-p (file)
+  "Return non-nil of FILE has changed."
+  (member (if (chezmoi-target-file-p file)
+              (chezmoi-target-file file)
+            file)
+          (chezmoi-changed-files)))
+
 (defun chezmoi-version ()
   "Get version number of chezmoi."
   (let* ((s (cl-first (chezmoi--dispatch "--version")))
@@ -172,30 +222,6 @@
                  chezmoi--dispatch
                  cl-first)))
 
-(defun chezmoi-managed ()
-  "List all files and directories managed by chezmoi."
-  (thread-last "managed"
-               chezmoi--dispatch
-               (cl-map 'list (lambda (file) (concat "~/" file)))))
-
-(defun chezmoi-managed-files ()
-  "List only files managed by chezmoi."
-  (thread-last (chezmoi-managed)
-               (cl-remove-if #'file-directory-p)))
-
-(defun chezmoi-target-file-p (file)
-  "Return non-nil if FILE is in the target state."
-  (thread-last (chezmoi-managed-files)
-               (cl-mapcar #'expand-file-name)
-               (member file)))
-
-(defun chezmoi-changed-p (file)
-  "Return non-nil of FILE has changed."
-  (member (if (chezmoi-target-file-p file)
-              (chezmoi-target-file file)
-            file)
-          (chezmoi-changed-files)))
-
 (defun chezmoi-write (&optional file arg)
   "Sync FILE. How it syncs depends if FILE is in source or target.
 If FILE is in source state, run =chezmoi apply= on the target to overwrite it.
@@ -236,32 +262,6 @@ With prefix ARG, save the source buffer."
                    (message "Failed to write %s. Use chezmoi-write with prefix arg to resolve with chezmoi."
                             target-file)
                    nil)))))))
-
-(defun chezmoi-diff (arg)
-  "View output of =chezmoi diff= in a diff-buffer.
-If ARG is non-nil, switch to the diff-buffer."
-  (interactive "i")
-  (let ((b (get-buffer-create "*chezmoi-diff*")))
-    (with-current-buffer b
-      (erase-buffer)
-      (shell-command (concat chezmoi-command " diff") b))
-    (unless arg
-      (switch-to-buffer b)
-      (diff-mode)
-      (whitespace-mode 0))
-    b))
-
-(defun chezmoi-changed-files ()
-  "Use chezmoi diff to return the files that have changed."
-  (with-current-buffer (chezmoi-diff t)
-    (goto-char (point-max))
-    (let (files line-beg)
-      (while (setq line-beg (re-search-backward "^\\+\\{3\\} .*" nil t))
-        (let ((file-name (thread-first line-beg
-                                       (buffer-substring-no-properties (line-end-position))
-                                       (substring 5))))
-          (push (concat "~" file-name) files)))
-      files)))
 
 (defun chezmoi-find (file)
   "Edit a source FILE managed by chezmoi.
