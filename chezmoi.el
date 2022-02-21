@@ -3,7 +3,7 @@
 ;; Author: Harrison Pielke-Lombardo
 ;; Maintainer: Harrison Pielke-Lombardo
 ;; Version: 1.0.0
-;; Package-Requires: ((emacs "26.1") (magit "3.0.0"))
+;; Package-Requires: ((emacs "26.1"))
 ;; Homepage: http://www.github.com/tuh8888/chezmoi.el
 ;; Keywords: vc
 
@@ -36,7 +36,6 @@
 
 ;;; Code:
 
-(require 'magit)
 (require 'ediff)
 (require 'cl-lib)
 
@@ -292,11 +291,6 @@ Note: Does not run =chezmoi merge=."
     (setq chezmoi--ediff-source-file source-file)
     (ediff-files source-file dotfile)
     (add-hook 'ediff-quit-hook #'chezmoi--remove-ediff-get-region-contents nil t)))
-
-(defun chezmoi-magit-status ()
-  "Show the status of the chezmoi source repository."
-  (interactive)
-  (magit-status-setup-buffer (chezmoi-source-file nil)))
 
 (defun chezmoi--select-files (files prompt f)
   "Iteratively select file from FILES given PROMPT and apply F to each selected.
