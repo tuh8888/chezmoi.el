@@ -95,8 +95,9 @@
       (erase-buffer)
       (shell-command (format "%s %s" chezmoi-command args) b)
       (let ((s (buffer-string)))
-        (unless (string-prefix-p "chezmoi:" s)
-          (split-string (string-trim s) "\n"))))))
+        (let ((result (split-string (string-trim s) "\n")))
+          (unless (cl-some (lambda (l) (string-match-p "chezmoi:" l)) result)
+            result))))))
 
 (defun chezmoi-managed ()
   "List all files and directories managed by chezmoi."
@@ -252,7 +253,7 @@ With prefix ARG, save the source buffer."
              (cmd (format "apply %s" (shell-quote-argument target-file))))
         (cond (arg (progn
                      (shell "*Chezmoi Shell*")
-                     (insert cmd)
+                     (insert (format "%s %s" chezmoi-command cmd))
                      (comint-send-input)
                      target-file))
               ((chezmoi--dispatch cmd) (progn
