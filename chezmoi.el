@@ -40,7 +40,6 @@
 (require 'ediff)
 (require 'cl-lib)
 
-
 (defgroup chezmoi nil
   "Customization group for `chezmoi-mode'."
   :group 'chezmoi)
@@ -396,7 +395,6 @@ When START is non-nil, find only the region around START."
       (if start
           (let ((start (previous-single-property-change end 'chezmoi buf))
                 (end (next-single-property-change start 'chezmoi buf)))
-            (message "%s %s" start end)
             (funcall f start end buffer-or-name))
         (while (and (setq start (next-single-property-change end 'chezmoi buf))
                     (setq end (next-single-property-change start 'chezmoi buf)))
