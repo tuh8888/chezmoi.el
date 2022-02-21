@@ -195,7 +195,7 @@ The recording above demonstrates editing a chezmoi template with source file on 
 
     ;; I find this hook useful for my emacs config files generated through org-tangle.
     (defun chezmoi-org-babel-tangle ()
-      (let ((file (buffer-file-name)))
-        (chezmoi-write nil (chezmoi-target-file (buffer-file-name)))))
+      (when-let ((fle (chezmoi-target-file (buffer-file-name))))
+        (chezmoi-write file)))
     (add-hook 'org-babel-post-tangle-hook #'chezmoi-org-babel-tangle)))
    #+end_src
