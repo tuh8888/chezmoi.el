@@ -27,6 +27,7 @@
 ;;; Commentary:
 
 ;;; Code:
+(require 'subr-x)
 
 (defcustom chezmoi-template-display-p nil
   "Whether to display templates."

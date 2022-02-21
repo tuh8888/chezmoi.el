@@ -46,6 +46,7 @@
 (require 'files)
 (require 'simple)
 (require 'shell)
+(require 'subr-x)
 (require 'whitespace)
 (require 'window)
 
@@ -96,13 +97,6 @@
       (let ((s (buffer-string)))
         (unless (string-prefix-p "chezmoi:" s)
           (split-string (string-trim s) "\n"))))))
-
-(defun chezmoi-source-file (target-file)
-  "Return the source file corresponding to TARGET-FILE."
-  (thread-last (when target-file (shell-quote-argument target-file))
-               (format "source-path %s")
-               chezmoi--dispatch
-               cl-first))
 
 (defun chezmoi-version ()
   "Get version number of chezmoi."
@@ -159,15 +153,24 @@
 
 (make-obsolete-variable 'chezmoi--manual-target-file 'chezmoi-target-file "0.0.1")
 
-(defun chezmoi-target-file (source-file)
-  "Return the target file corresponding to SOURCE-FILE."
+(defun chezmoi-target-file (file)
+  "Return the target file corresponding to FILE."
+  (unless (chezmoi-target-file-p file))
   (let ((v (chezmoi-version)))
     (if (or (and v (string-match-p "^[0-9]" v) (version<= "2.12.0" v)) (string= "dev" v))
-        (thread-last (when source-file (shell-quote-argument source-file))
+        (thread-last (when file (shell-quote-argument file))
                      (format "target-path %s")
                      chezmoi--dispatch
                      cl-first)
-      (chezmoi--manual-target-file source-file))))
+      (chezmoi--manual-target-file file))))
+
+(defun chezmoi-source-file (file)
+  "Return the source file corresponding to FILE."
+  (when (chezmoi-target-file-p file)
+    (thread-last (when file (shell-quote-argument file))
+                 (format "source-path %s")
+                 chezmoi--dispatch
+                 cl-first)))
 
 (defun chezmoi-managed ()
   "List all files and directories managed by chezmoi."
@@ -181,13 +184,13 @@
                (cl-remove-if #'file-directory-p)))
 
 (defun chezmoi-target-file-p (file)
-  "Return true if FILE is in the target state."
+  "Return non-nil if FILE is in the target state."
   (thread-last (chezmoi-managed-files)
                (cl-mapcar #'expand-file-name)
                (member file)))
 
 (defun chezmoi-changed-p (file)
-  "Return true of FILE has changed."
+  "Return non-nil of FILE has changed."
   (member (if (chezmoi-target-file-p file)
               (chezmoi-target-file file)
             file)
@@ -271,14 +274,16 @@ Note: Does not run =chezmoi edit=."
                           (chezmoi-managed-files)
                           nil t)))
   (let ((source-file (chezmoi-source-file file)))
-    (find-file source-file)
-    (when-let ((mode (thread-first file
-                                   file-name-nondirectory
-                                   (assoc-default auto-mode-alist 'string-match))))
-      (funcall mode))
-    (message file)
-    (chezmoi-mode)
-    source-file))
+    (when source-file
+      (find-file source-file)
+      (let ((target-file source-file))
+        (when-let ((mode (thread-first target-file
+                                       file-name-nondirectory
+                                       (assoc-default auto-mode-alist 'string-match))))
+          (funcall mode))
+        (message target-file)
+        (chezmoi-mode)
+        source-file))))
 
 (defun chezmoi-sync-files (files &optional arg)
   "Iteratively select file from FILES to sync.
@@ -299,11 +304,13 @@ Prefix ARG is passed to `chezmoi-write'."
       (setq files (remove file files)))))
 
 (defun chezmoi-open-other (file)
-  "Open buffer's target file."
+  "Open buffer's target FILE."
   (interactive (list (buffer-file-name)))
-  (find-file (if (chezmoi-target-file-p file)
-                 (chezmoi-source-file file)
-               (chezmoi-target-file file))))
+  (if (chezmoi-target-file-p file)
+      (chezmoi-find file)
+    (thread-first file
+                  chezmoi-target-file
+                  find-file)))
 
 (defun chezmoi-font-lock-keywords ()
   "Keywords for font lock."
