@@ -40,7 +40,6 @@
 (require 'ediff)
 (require 'cl-lib)
 
-
 (defgroup chezmoi nil
   "Customization group for `chezmoi-mode'."
   :group 'chezmoi)
@@ -433,6 +432,10 @@ START is passed to `chezmoi--funcall-over-display-properties'."
 (defun chezmoi-font-lock-keywords ()
   "Keywords for font lock."
   `((,chezmoi-template-regex 0 'chezmoi-template-face prepend)))
+
+(defun chezmoi-get-data ()
+  ""
+  (json-parse-string (shell-command-to-string (concat "chezmoi " "data"))))
 
 (define-minor-mode chezmoi-mode
   "Chezmoi mode for source files."
