@@ -35,8 +35,6 @@
 ;; get out of sync. Dired and magit integration is also provided.
 
 ;;; Code:
-
-(require 'ediff)
 (require 'cl-lib)
 
 (defgroup chezmoi nil
@@ -101,9 +99,6 @@
 
 (defvar-local chezmoi--templates-displayed-p nil
   "Whether all templates are currently displayed.")
-
-(defvar-local chezmoi--ediff-source-file nil
-  "Current ediff source-file.")
 
 (defun chezmoi--select-file (files prompt f)
   "Call F on the selected file from FILES, giving PROMPT."
@@ -256,41 +251,10 @@ Note: Does not run =chezmoi edit=."
     (chezmoi-mode)
     source-file))
 
-(defun chezmoi-convert-template (template)
+(defun chezmoi-execute-template (template)
   "Convert a TEMPLATE string using chezmoi'."
   (let* ((cmd (concat chezmoi-command " execute-template " (shell-quote-argument template))))
     (shell-command-to-string cmd)))
-
-(defun chezmoi--ediff-get-region-contents (n buf-type ctrl-buf &optional start end)
-  "An overriding fn for `ediff-get-region-contents'.
-Converts and applies template diffs from the source-file."
-  (ediff-with-current-buffer
-      (ediff-with-current-buffer ctrl-buf (ediff-get-buffer buf-type))
-    (if (string-equal chezmoi--ediff-source-file (buffer-file-name))
-        (chezmoi-convert-template (buffer-substring-no-properties
-                                   (or start (ediff-get-diff-posn buf-type 'beg n ctrl-buf))
-                                   (or end (ediff-get-diff-posn buf-type 'end n ctrl-buf))))
-      (buffer-substring
-       (or start (ediff-get-diff-posn buf-type 'beg n ctrl-buf))
-       (or end (ediff-get-diff-posn buf-type 'end n ctrl-buf))))))
-
-(defun chezmoi--remove-ediff-get-region-contents ()
-  "Remove advice overriding `ediff-get-region-contents'."
-  (advice-remove 'ediff-get-region-contents #'chezmoi--ediff-get-region-contents))
-
-(defun chezmoi-ediff (dotfile)
-  "Choose a DOTFILE to merge with its source using `ediff'.
-Note: Does not run =chezmoi merge=."
-  (interactive
-   (list (completing-read
-          "Select a dotfile to merge: "
-          (chezmoi-changed-files)
-          nil t)))
-  (let ((source-file (chezmoi-find dotfile)))
-    (advice-add 'ediff-get-region-contents :override #'chezmoi--ediff-get-region-contents)
-    (setq chezmoi--ediff-source-file source-file)
-    (ediff-files source-file dotfile)
-    (add-hook 'ediff-quit-hook #'chezmoi--remove-ediff-get-region-contents nil t)))
 
 (defun chezmoi--select-files (files prompt f)
   "Iteratively select file from FILES given PROMPT and apply F to each selected.
