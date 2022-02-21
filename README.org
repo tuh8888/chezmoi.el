@@ -27,7 +27,7 @@ The recording above demonstrates editing a chezmoi template with source file on 
 * Usage
   One of the main goals of this package is to allow users to access their files managed by chezmoi and sync changes in the source state with the target state files that are used. Opening source state files is done using ~chezmoi-find~. This opens a buffer for the source state and adds a hook to sync it with the corresponding target state file when changes are saved. However, to prevent overwriting changes that were made to the target state file outside of the source state (such as by auto-generated content), this hook is only added when the source and target states are in sync at the time of opening.
 
-  You can overwrite the target state file manually by calling ~chezmoi-write~ from within the buffer. Alternatively, you can overwrite the source state file with the content from the target state using ~chezmoi-write-from-target~. This can be performed for several files in a row using ~chezmoi-write-files~ and ~chezmoi-write-files-from-target~.
+  You can overwrite the target state file manually by calling ~chezmoi-write~ from within the source state buffer. Alternatively, you can overwrite the source state file with the content from the current target state file using ~chezmoi-write~. This can be performed for several files in a row using ~chezmoi-write-files~.
 
   Quickly jump to the corresponding target file or source file using ~chezmoi-open-other~.
 
@@ -158,7 +158,7 @@ The recording above demonstrates editing a chezmoi template with source file on 
       "f d d" #'chezmoi-diff
       "f d e" #'chezmoi-ediff
       "f d f" #'chezmoi-find
-      "f d i" #'chezmoi-write-files-from-target
+      "f d i" #'chezmoi-write-files
       "f d o" #'chezmoi-open-other
       "f d t" #'chezmoi-template-buffer-display
       "f d c" #'chezmoi-mode)
@@ -185,6 +185,7 @@ The recording above demonstrates editing a chezmoi template with source file on 
             (remove-hook 'evil-insert-state-exit-hook #'chezmoi--evil-insert-state-exit 1))))
       (add-hook 'chezmoi-mode-hook #'chezmoi-evil))
 
+    (require 'chezmoi-company)
     (add-hook 'chezmoi-mode-hook #'(lambda () (if chezmoi-mode
                                              (add-to-list 'company-backends 'chezmoi-company-backend)
                                            (setq company-backends (delete 'chezmoi-company-backend company-backends)))))
