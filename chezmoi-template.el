@@ -3,7 +3,7 @@
 ;; Author: Harrison Pielke-Lombardo
 ;; Maintainer: Harrison Pielke-Lombardo
 ;; Version: 1.0.0
-;; Package-Requires: ((emacs "26.1") (magit "3.0.0"))
+;; Package-Requires: ((emacs "26.1"))
 ;; Homepage: http://www.github.com/tuh8888/chezmoi.el
 ;; Keywords: vc
 
@@ -27,8 +27,6 @@
 ;;; Commentary:
 
 ;;; Code:
-
-(require 'chezmoi)
 
 (defcustom chezmoi-template-display-p nil
   "Whether to display templates."
@@ -54,6 +52,11 @@
   "Regex for detecting if chezmoi has encountered an error."
   :type '(choice string regexp)
   :group 'chezmoi)
+
+(defun chezmoi-template-execute (template)
+  "Convert a TEMPLATE string using chezmoi'."
+  (let* ((cmd (concat chezmoi-command " execute-template " (shell-quote-argument template))))
+    (shell-command-to-string cmd)))
 
 (defun chezmoi-template--put-display-value (start end value &optional object)
   "Display the VALUE from START to END in string or buffer OBJECT."
@@ -87,7 +90,7 @@ the template value and BUFFER-OR-NAME."
         (let* ((start (match-beginning 0))
                (end (match-end 0))
                (template (substring string start end))
-               (value (chezmoi-execute-template template)))
+               (value (chezmoi-template-execute template)))
           (funcall f (1+ start) (1+ end) value buffer-or-name))))))
 
 (defun chezmoi-template--funcall-over-display-properties (f start buffer-or-name)

@@ -3,7 +3,7 @@
 ;; Author: Harrison Pielke-Lombardo
 ;; Maintainer: Harrison Pielke-Lombardo
 ;; Version: 1.0.0
-;; Package-Requires: ((emacs "26.1") (magit "3.0.0"))
+;; Package-Requires: ((emacs "26.1"))
 ;; Homepage: http://www.github.com/tuh8888/chezmoi.el
 ;; Keywords: vc
 
@@ -31,7 +31,6 @@
 ;;; Code:
 
 (require 'dired)
-(require 'chezmoi)
 
 (defun chezmoi-dired-add-marked-files ()
   "Add files marked in Dired to source state."

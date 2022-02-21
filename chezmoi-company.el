@@ -3,7 +3,7 @@
 ;; Author: Harrison Pielke-Lombardo
 ;; Maintainer: Harrison Pielke-Lombardo
 ;; Version: 1.0.0
-;; Package-Requires: ((emacs "26.1") (magit "3.0.0"))
+;; Package-Requires: ((emacs "27.1"))
 ;; Homepage: http://www.github.com/tuh8888/chezmoi.el
 ;; Keywords: vc
 
@@ -32,10 +32,13 @@
 
 (require 'company)
 (require 'cl-lib)
-(require 'chezmoi)
 
 (defvar-local chezmoi-company--key-regex "\\."
   "Regex for splitting keys.")
+
+(defun chezmoi-company-get-data ()
+  "Return chezmoi data."
+  (json-parse-string (shell-command-to-string (concat "chezmoi " "data"))))
 
 (defun chezmoi-company--keys-at-point ()
   "Convert the point to a sequence of keys."
@@ -45,7 +48,7 @@
 (defun chezmoi-company--data-at-point ()
   "Chezmoi data corresponding to the key path at the current point."
   (let ((keys (remove "" (butlast (chezmoi-company--keys-at-point)))))
-    (cl-reduce (lambda (data k) (gethash k data)) keys :initial-value (chezmoi-get-data))))
+    (cl-reduce (lambda (data k) (gethash k data)) keys :initial-value (chezmoi-company-get-data))))
 
 (defun chezmoi-company--prefix ()
   "Return prefix for company completion."

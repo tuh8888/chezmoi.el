@@ -31,7 +31,6 @@
 ;;; Code:
 
 (require 'magit)
-(require 'chezmoi)
 
 (defun chezmoi-magit-status ()
   "Show the status of the chezmoi source repository."
