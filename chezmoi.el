@@ -36,7 +36,6 @@
 
 ;;; Code:
 (require 'cl-lib)
-(require 'chezmoi-company)
 (require 'chezmoi-dired)
 (require 'chezmoi-ediff)
 (require 'chezmoi-magit)

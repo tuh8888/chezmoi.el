@@ -4,8 +4,7 @@ This package provides convenience functions for interacting with the [[https://c
 
 [[https://melpa.org/#/chezmoi][file:https://melpa.org/packages/chezmoi-badge.svg]]
 
-
- [[file:resources/chezmoi-template-recording.gif]]
+[[file:resources/chezmoi-template-recording.gif]]
 
 The recording above demonstrates editing a chezmoi template with source file on left, command log on top right, and associated target file on bottom right.
 
@@ -26,21 +25,11 @@ The recording above demonstrates editing a chezmoi template with source file on 
   You can manually call ~M-x chezmoi-mode~ in a source file buffer to turn on/of syncronization and template rendering (see [[Templates]]). When using ~chezmoi-find~ or ~chezmoi-ediff~, ~chezmoi-mode~ will be turned on for you in the source file's buffer.
 
 * Usage
-** Editing files
+  One of the main goals of this package is to allow users to access their files managed by chezmoi and sync changes in the source state with the target state files that are used. Opening source state files is done using ~chezmoi-find~. This opens a buffer for the source state and adds a hook to sync it with the corresponding target state file when changes are saved. However, to prevent overwriting changes that were made to the target state file outside of the source state (such as by auto-generated content), this hook is only added when the source and target states are in sync at the time of opening.
 
-   One of the main goals of this package is to allow users to access their files managed by chezmoi and sync changes in the source state with the target state files that are used. Opening source state files is done using ~chezmoi-find~. This opens a buffer for the source state and adds a hook to sync it with the corresponding target state file when changes are saved. However, to prevent overwriting changes that were made to the target state file outside of the source state (such as by auto-generated content), this hook is only added when the source and target states are in sync at the time of opening.
+  You can overwrite the target state file manually by calling ~chezmoi-write~ from within the buffer. Alternatively, you can overwrite the source state file with the content from the target state using ~chezmoi-write-from-target~. This can be performed for several files in a row using ~chezmoi-write-files~ and ~chezmoi-write-files-from-target~.
 
-   You can overwrite the target state file manually by calling ~chezmoi-write~ from within the buffer. Alternatively, you can overwrite the source state file with the content from the target state using ~chezmoi-write-from-target~. This can be performed for several files in a row using ~chezmoi-write-files~ and ~chezmoi-write-files-from-target~.
-
-   Quickly jump to the corresponding target file or source file using ~chezmoi-open-other~.
-
-** Comparing source and target states
-
-   Emacs has a lovely package called ~ediff~ for comparing differences between files which is perfect for when the source and target states get out of sync. Quickly resolve inconsistencies between source and target states using ~chezmoi-ediff~. Or view the raw diff using ~chezmoi-diff~ if you prefer. Pipe this into your own diff workflow using ~(chezmoi-diff 1)~ to give raw diff input to some other diff management tool.
-
-** Dired
-
-   In a Dired buffer, add files to chezmoi by either moving to the file or marking some and calling ~chezmoi-dired-add-marked-files~.
+  Quickly jump to the corresponding target file or source file using ~chezmoi-open-other~.
 
 * Functions
 
@@ -56,28 +45,60 @@ The recording above demonstrates editing a chezmoi template with source file on 
 
 * Templates
 
-  Chezmoi.el provides a minor mode for displaying the values of [[https://www.chezmoi.io/user-guide/templating/][chezmoi template]] strings as overlays in source file buffers. You can toggle their display with ~M-x chezmoi-display-buffer-templates~ or with a configuration variable:
+  Chezmoi.el provides a minor mode for displaying the values of [[https://www.chezmoi.io/user-guide/templating/][chezmoi template]] strings as overlays in source file buffers. You can toggle their display with ~M-x chezmoi-template-buffer-display~ or with a configuration variable:
 
   #+begin_src emacs-lisp :noweb yes
-(setq chezmoi-display-templates t) ;; Display template values in all source buffers.
-(setq chezmoi-display-templates nil) ;; Don't display template values.
+(setq chezmoi-template-display-p t) ;; Display template values in all source buffers.
+(setq chezmoi-template-display-p nil) ;; Don't display template values.
   #+end_src
 
-** With Evil
+* Integrations
+
+** Ediff: Comparing source and target states
+
+   Emacs has a lovely package called ~ediff~ for comparing differences between files which is perfect for when the source and target states get out of sync. Quickly resolve inconsistencies between source and target states using ~chezmoi-ediff~. Or view the raw diff using ~chezmoi-diff~ if you prefer. Pipe this into your own diff workflow using ~(chezmoi-diff 1)~ to give raw diff input to some other diff management tool.
+
+
+** With Company
+
+   Company integration is provided through ~chezmoi-company-backend~. Simply add it to to ~company-backends~. This will show completions for when editing template variables.
+
+   #+begin_src emacs-lisp :noweb yes
+(require 'chezmoi-company)
+(add-hook 'chezmoi-mode-hook #'(lambda () (if chezmoi-mode
+                                              (add-to-list 'company-backends 'chezmoi-company-backend)
+                                            (delete 'chezmoi-company-backend 'company-backends))))
+   #+end_src
+
+** Dired
+
+   In a Dired buffer, add files to chezmoi by either moving to the file or marking some and calling ~chezmoi-dired-add-marked-files~.
+
+** Magit
+
+   Use ~chezmoi-magit-status~ to jump to the ~magit-status~ for your chezmoi.
+
+** Org
+
+
+
+* Configuration
+
+** Evil
 
    Integrate with evil mode by toggling  template display when entering insert mode.
 
    #+begin_src emacs-lisp :noweb yes
 (defun chezmoi--evil-insert-state-enter ()
   "Run after evil-insert-state-entry."
-  (chezmoi-display-buffer-templates nil (point))
-  (remove-hook 'after-change-functions #'chezmoi--after-change 1))
+  (chezmoi-template-buffer-display nil (point))
+  (remove-hook 'after-change-functions #'chezmoi-template--after-change 1))
 
 (defun chezmoi--evil-insert-state-exit ()
   "Run after evil-insert-state-exit."
-  (chezmoi-display-buffer-templates nil)
-  (chezmoi-display-buffer-templates t)
-  (add-hook 'after-change-functions #'chezmoi--after-change nil 1))
+  (chezmoi-template-buffer-display nil)
+  (chezmoi-template-buffer-display t)
+  (add-hook 'after-change-functions #'chezmoi-template--after-change nil 1))
 
 (defun chezmoi-evil ()
   (if chezmoi-mode
@@ -90,10 +111,9 @@ The recording above demonstrates editing a chezmoi template with source file on 
 (add-hook 'chezmoi-mode-hook #'chezmoi-evil)
    #+end_src
 
-* Configuration
 ** Ligatures
 
-   Ligatures don't seem to play nice with overlaid text.
+   Ligatures don't seem to play nice with overlaid text. When using templates, it is recommended to turn off ~ligature-mode~.
 
    #+begin_src emacs-lisp :noweb yes
 ;; Turn off ligatures because they show up poorly.
@@ -101,14 +121,29 @@ The recording above demonstrates editing a chezmoi template with source file on 
                                             (ligature-mode (if chezmoi-mode 0 1)))))
    #+end_src
 
+** Org babel tangle
+
+   I find this hook useful for my emacs config files generated through org-tangle.
+
+   #+begin_src emacs-lisp :noweb yes
+(defun chezmoi-org-babel-tangle ()
+  (let ((file (buffer-file-name)))
+    (chezmoi-write nil (chezmoi-target-file (buffer-file-name)))))
+
+(add-hook 'org-babel-post-tangle-hook #'chezmoi-org-babel-tangle))
+   #+end_src
+
 ** Spacemacs layer
 
    Provided here is a sample layer for those who use Spacemacs. Add it by creating a Spacemacs layer called "chezmoi" and create a file in it called "packages.el" with the following code:
 
-   #+begin_src emacs-lisp :noweb yes
+   #+begin_src emacs-lisp :noweb yes :results silent
 (defconst chezmoi-packages
   '(
-    chezmoi)
+    (chezmoi :location (recipe
+                        :fetcher github
+                        :repo "tuh8888/chezmoi.el"
+                        :branch "split-to-subfiles")))
   "The list of Lisp packages required by the chezmoi layer.")
 
 
@@ -125,19 +160,20 @@ The recording above demonstrates editing a chezmoi template with source file on 
       "f d f" #'chezmoi-find
       "f d i" #'chezmoi-write-files-from-target
       "f d o" #'chezmoi-open-other
+      "f d t" #'chezmoi-template-buffer-display
       "f d c" #'chezmoi-mode)
 
     (when (equalp dotspacemacs-editing-style 'vim)
       (defun chezmoi--evil-insert-state-enter ()
         "Run after evil-insert-state-entry."
-        (chezmoi-display-buffer-templates nil (point))
-        (remove-hook 'after-change-functions #'chezmoi--after-change 1))
+        (chezmoi-template-buffer-display nil (point))
+        (remove-hook 'after-change-functions #'chezmoi-template--after-change 1))
 
       (defun chezmoi--evil-insert-state-exit ()
         "Run after evil-insert-state-exit."
-        (chezmoi-display-buffer-templates nil)
-        (chezmoi-display-buffer-templates t)
-        (add-hook 'after-change-functions #'chezmoi--after-change nil 1))
+        (chezmoi-template-buffer-display nil)
+        (chezmoi-template-buffer-display t)
+        (add-hook 'after-change-functions #'chezmoi-template--after-change nil 1))
 
       (defun chezmoi-evil ()
         (if chezmoi-mode
@@ -148,6 +184,10 @@ The recording above demonstrates editing a chezmoi template with source file on 
             (remove-hook 'evil-insert-state-entry-hook #'chezmoi--evil-insert-state-enter 1)
             (remove-hook 'evil-insert-state-exit-hook #'chezmoi--evil-insert-state-exit 1))))
       (add-hook 'chezmoi-mode-hook #'chezmoi-evil))
+
+    (add-hook 'chezmoi-mode-hook #'(lambda () (if chezmoi-mode
+                                                  (add-to-list 'company-backends 'chezmoi-company-backend)
+                                                (delete 'chezmoi-company-backend 'company-backends))))
 
     ;; Turn off ligatures cuz they look bad.
     (add-hook 'chezmoi-mode-hook #'(lambda () (ligature-mode (if chezmoi-mode 0 1))))
