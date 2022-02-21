@@ -113,7 +113,7 @@
   "Return non-nil if FILE is in the target state."
   (thread-last (chezmoi-managed-files)
                (cl-mapcar #'expand-file-name)
-               (member file)))
+               (member (expand-file-name file))))
 
 (defun chezmoi-diff (arg)
   "View output of =chezmoi diff= in a diff-buffer.
