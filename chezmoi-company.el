@@ -78,3 +78,7 @@ The value of the path if candidate is a string. Otherwise indicate type."
     (prefix (chezmoi-company--prefix))
     (candidates (chezmoi-company--candidates arg))
     (annotation (chezmoi-company--annotation arg))))
+
+(provide 'chezmoi-company)
+
+;;; chezmoi-company.el ends here
