@@ -34,26 +34,27 @@
 (require 'cl-lib)
 (require 'chezmoi)
 
-(defun chezmoi-company--key-path-string-to-keys (string)
-  ""
-  (split-string string "\\."))
-
-(defun chezmoi-company--get-in-data (data keys)
-  ""
-  (cl-reduce (lambda (data k) (gethash k data)) keys :initial-value data))
+(defvar-local chezmoi-company--key-regex "\\."
+  "Regex for splitting keys.")
 
 (defun chezmoi-company--keys-at-point ()
-  ""
+  "Convert the point to a sequence of keys."
   (when-let ((thing (thing-at-point 'sexp t)))
-    (chezmoi-company--key-path-string-to-keys thing)))
+    (split-string thing chezmoi-company--key-regex)))
 
 (defun chezmoi-company--data-at-point ()
-  ""
+  "Chezmoi data corresponding to the key path at the current point."
   (let ((keys (remove "" (butlast (chezmoi-company--keys-at-point)))))
-    (chezmoi-company--get-in-data (chezmoi-get-data) keys)))
+    (cl-reduce (lambda (data k) (gethash k data)) keys :initial-value (chezmoi-get-data))))
+
+(defun chezmoi-company--prefix ()
+  "Return prefix for company completion."
+  (and (member 'chezmoi-mode local-minor-modes)
+       (car (last (chezmoi-company--keys-at-point)))))
 
 (defun chezmoi-company--candidates (prefix)
-  ""
+  "Return candidates for PREFIX for company completion.
+Candidates are chezmoi data values corresponding to the path at point."
   (let* ((data (chezmoi-company--data-at-point))
          (candidates (if (hash-table-p data)
                          (hash-table-keys data)
@@ -61,20 +62,19 @@
     (cl-remove-if-not (lambda (c) (string-prefix-p prefix c)) candidates)))
 
 (defun chezmoi-company--annotation (candidate)
-  ""
+  "Return annotation for CANDIDATE for company completion.
+The value of the path if candidate is a string. Otherwise indicate type."
   (let* ((data (chezmoi-company--data-at-point))
          (value (when (hash-table-p data) (gethash candidate data))))
-    (if (stringp value)
-        (format " (%s)" value)
-      "")))
+    (cond ((stringp value) (format " (%s)" value))
+          ((hash-table-p value) " <Object>")
+          (t ""))))
 
 (defun chezmoi-company-backend (command &optional arg &rest ignored)
-  ""
+  "Company backend for chezmoi. Provides completion using =chezmoi data=."
   (interactive (list 'interactive))
-
   (cl-case command
     (interactive (company-begin-backend 'chezmoi-company-backend))
-    (prefix (and (member 'chezmoi-mode local-minor-modes)
-                 (car (last (chezmoi-company--keys-at-point)))))
+    (prefix (chezmoi-company--prefix))
     (candidates (chezmoi-company--candidates arg))
     (annotation (chezmoi-company--annotation arg))))
