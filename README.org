@@ -141,10 +141,7 @@ The recording above demonstrates editing a chezmoi template with source file on 
    #+begin_src emacs-lisp :noweb yes :results silent
 (defconst chezmoi-packages
   '(
-    (chezmoi :location (recipe
-                        :fetcher github
-                        :repo "tuh8888/chezmoi.el"
-                        :branch "split-to-subfiles")))
+    chezmoi)
   "The list of Lisp packages required by the chezmoi layer.")
 
 
