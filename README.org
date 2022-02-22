@@ -127,11 +127,7 @@ The recording above demonstrates editing a chezmoi template with source file on 
    I find this hook useful for my emacs config files generated through org-tangle.
 
    #+begin_src emacs-lisp :noweb yes
-(defun chezmoi-org-babel-tangle ()
-  (let ((file (buffer-file-name)))
-    (chezmoi-write nil (chezmoi-target-file (buffer-file-name)))))
-
-(add-hook 'org-babel-post-tangle-hook #'chezmoi-org-babel-tangle))
+(add-hook 'org-babel-post-tangle-hook #'chezmoi-write))
    #+end_src
 
 ** Spacemacs layer
