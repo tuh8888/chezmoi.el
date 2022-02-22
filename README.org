@@ -185,6 +185,9 @@ The recording above demonstrates editing a chezmoi template with source file on 
             (remove-hook 'evil-insert-state-exit-hook #'chezmoi--evil-insert-state-exit 1))))
       (add-hook 'chezmoi-mode-hook #'chezmoi-evil))
 
+
+    (setq chezmoi-template-display-p t) ;; Display template values in all source buffers.
+
     (require 'chezmoi-company)
     (add-hook 'chezmoi-mode-hook #'(lambda () (if chezmoi-mode
                                              (add-to-list 'company-backends 'chezmoi-company-backend)
