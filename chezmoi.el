@@ -59,6 +59,9 @@
   :type '(string)
   :group 'chezmoi)
 
+(defvar chezmoi-command-error-regex "chezmoi:"
+  "Regex for detecting if chezmoi has encountered an error.")
+
 (defcustom chezmoi-source-state-prefix-attrs
   '("after_"
     "before_"
@@ -96,7 +99,7 @@
       (shell-command (format "%s %s" chezmoi-command args) b)
       (let ((s (buffer-string)))
         (let ((result (split-string (string-trim s) "\n")))
-          (unless (cl-some (lambda (l) (string-match-p "chezmoi:" l)) result)
+          (unless (cl-some (lambda (l) (string-match-p chezmoi-command-error-regex l)) result)
             result))))))
 
 (defun chezmoi-managed ()
