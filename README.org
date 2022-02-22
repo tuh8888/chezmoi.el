@@ -48,8 +48,9 @@ The recording above demonstrates editing a chezmoi template with source file on 
   Chezmoi.el provides a minor mode for displaying the values of [[https://www.chezmoi.io/user-guide/templating/][chezmoi template]] strings as overlays in source file buffers. You can toggle their display with ~M-x chezmoi-template-buffer-display~ or with a configuration variable:
 
   #+begin_src emacs-lisp :noweb yes
-(setq chezmoi-template-display-p t) ;; Display template values in all source buffers.
-(setq chezmoi-template-display-p nil) ;; Don't display template values.
+(setq-default chezmoi-template-display-p t)   ;; Display template values in all source buffers.
+(setq chezmoi-template-display-p t)           ;; Display template values in current buffer.
+(setq-default chezmoi-template-display-p nil) ;; Don't display template values by default.
   #+end_src
 
 * Integrations

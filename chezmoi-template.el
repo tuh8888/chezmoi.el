@@ -32,7 +32,8 @@
 (defcustom chezmoi-template-display-p nil
   "Whether to display templates."
   :type '(boolean)
-  :group 'chezmoi)
+  :group 'chezmoi
+  :local t)
 
 (defvar-local chezmoi-template--buffer-displayed-p nil
   "Whether all templates are currently displayed in buffer.")
