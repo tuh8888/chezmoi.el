@@ -35,7 +35,7 @@
 (defun chezmoi-magit-status ()
   "Show the status of the chezmoi source repository."
   (interactive)
-  (magit-status-setup-buffer (chezmoi-source-file nil)))
+  (magit-status-setup-buffer (cl-first (chezmoi--dispatch "source-path"))))
 
 (provide 'chezmoi-magit)
 
