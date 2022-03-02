@@ -277,7 +277,7 @@ Note: Does not run =chezmoi edit=."
   (let ((source-file (chezmoi-source-file file)))
     (when source-file
       (find-file source-file)
-      (let ((target-file source-file))
+      (let ((target-file (chezmoi-target-file source-file)))
         (when-let ((mode (thread-first target-file
                                        file-name-nondirectory
                                        (assoc-default auto-mode-alist 'string-match))))
