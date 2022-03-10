@@ -38,7 +38,7 @@
 
 (defun chezmoi-company-get-data ()
   "Return chezmoi data."
-  (json-parse-string (chezmoi--dispatch "data")))
+  (json-parse-string (apply #'concat (chezmoi--dispatch "data"))))
 
 (defun chezmoi-company--keys-at-point ()
   "Convert the point to a sequence of keys."
