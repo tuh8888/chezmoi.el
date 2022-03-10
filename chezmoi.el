@@ -59,7 +59,10 @@
   :type '(string)
   :group 'chezmoi)
 
-(defcustom chezmoi-source-state-prefix-attrs
+(defvar chezmoi-command-error-regex "chezmoi:"
+  "Regex for detecting if chezmoi has encountered an error.")
+
+(defvar chezmoi-source-state-prefix-attrs
   '("after_"
     "before_"
     "create_"
@@ -77,16 +80,12 @@
     "remove_"
     "run_"
     "symlink_")
-  "Source state attribute prefixes."
-  :type '(list)
-  :group 'chezmoi)
+  "Source state attribute prefixes.")
 
-(defcustom chezmoi-source-state-suffix-attrs
+(defvar chezmoi-source-state-suffix-attrs
   '(".literal"
     ".tmpl")
-  "Source state attribute suffixes."
-  :type '(list)
-  :group 'chezmoi)
+  "Source state attribute suffixes.")
 
 (defun chezmoi--dispatch (args)
   ""
@@ -96,7 +95,7 @@
       (shell-command (format "%s %s" chezmoi-command args) b)
       (let ((s (buffer-string)))
         (let ((result (split-string (string-trim s) "\n")))
-          (unless (cl-some (lambda (l) (string-match-p "chezmoi:" l)) result)
+          (unless (cl-some (lambda (l) (string-match-p chezmoi-command-error-regex l)) result)
             result))))))
 
 (defun chezmoi-managed ()

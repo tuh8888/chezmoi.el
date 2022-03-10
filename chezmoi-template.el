@@ -32,7 +32,8 @@
 (defcustom chezmoi-template-display-p nil
   "Whether to display templates."
   :type '(boolean)
-  :group 'chezmoi)
+  :group 'chezmoi
+  :local t)
 
 (defvar-local chezmoi-template--buffer-displayed-p nil
   "Whether all templates are currently displayed in buffer.")
@@ -41,16 +42,8 @@
   "Face for displaying chezmoi templates values."
   :group 'chezmoi)
 
-(defcustom chezmoi-template-regex ;; (pcre-to-elisp "\\{\\{ \\.\\S+ \\}\\}")
-  "{{ \\.[^
-    ]+ }}"
+(defcustom chezmoi-template-regex "{{ \\.[^[:space:]]+ }}" ; (pcre-to-elisp "\\{\\{ \\.\\S+ \\}\\}")
   "Regex for detecting chezmoi templates."
-  :type '(choice string regexp)
-  :group 'chezmoi)
-
-(defcustom chezmoi-template-error-regex ;; (pcre-to-elisp "chezmoi: template:")
-  "chezmoi: template:"
-  "Regex for detecting if chezmoi has encountered an error."
   :type '(choice string regexp)
   :group 'chezmoi)
 
@@ -62,7 +55,7 @@
 
 (defun chezmoi-template--put-display-value (start end value &optional object)
   "Display the VALUE from START to END in string or buffer OBJECT."
-  (unless (string-match-p chezmoi-template-error-regex value)
+  (unless (string-match-p chezmoi-command-error-regex value)
     (put-text-property start end 'display value object)
     (put-text-property start end 'chezmoi t object)
     (font-lock-flush start end)

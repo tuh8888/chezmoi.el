@@ -33,17 +33,17 @@
 (require 'company)
 (require 'cl-lib)
 
-(defvar-local chezmoi-company--key-regex "\\."
+(defvar chezmoi-company-key-regex "\\."
   "Regex for splitting keys.")
 
 (defun chezmoi-company-get-data ()
   "Return chezmoi data."
-  (json-parse-string (shell-command-to-string (concat "chezmoi " "data"))))
+  (json-parse-string (apply #'concat (chezmoi--dispatch "data"))))
 
 (defun chezmoi-company--keys-at-point ()
   "Convert the point to a sequence of keys."
   (when-let ((thing (thing-at-point 'sexp t)))
-    (split-string thing chezmoi-company--key-regex)))
+    (split-string thing chezmoi-company-key-regex)))
 
 (defun chezmoi-company--data-at-point ()
   "Chezmoi data corresponding to the key path at the current point."
