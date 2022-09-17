@@ -205,14 +205,14 @@ If ARG is non-nil, switch to the diff-buffer."
 
 (defun chezmoi-target-file (file)
   "Return the target file corresponding to FILE."
-  (unless (chezmoi-target-file-p file))
-  (let ((v (chezmoi-version)))
-    (if (or (and v (string-match-p "^[0-9]" v) (version<= "2.12.0" v)) (string= "dev" v))
-        (thread-last (when file (shell-quote-argument file))
-                     (format "target-path %s")
-                     chezmoi--dispatch
-                     cl-first)
-      (chezmoi--manual-target-file file))))
+  (unless (chezmoi-target-file-p file)
+    (let ((v (chezmoi-version)))
+      (if (or (and v (string-match-p "^[0-9]" v) (version<= "2.12.0" v)) (string= "dev" v))
+          (thread-last (when file (shell-quote-argument file))
+                       (format "target-path %s")
+                       chezmoi--dispatch
+                       cl-first)
+	(chezmoi--manual-target-file file)))))
 
 (defun chezmoi-source-file (file)
   "Return the source file corresponding to FILE."
@@ -263,6 +263,14 @@ With prefix ARG, save the source buffer."
                             target-file)
                    nil)))))))
 
+(defun chezmoi--completing-read (prompt choices category)
+  (completing-read prompt
+                   (lambda (string predicate action)
+                     (if (eq action 'metadata)
+                         `(metadata (category . ,category))
+                       (complete-with-action action choices string predicate)))
+                   nil t))
+
 (defun chezmoi-find (file)
   "Edit a source FILE managed by chezmoi.
 If the target file has the same state as the source file,add a hook to
@@ -270,9 +278,9 @@ If the target file has the same state as the source file,add a hook to
 the buffer editing the source state is saved the target state is kept in sync.
 Note: Does not run =chezmoi edit=."
   (interactive
-   (list (completing-read "Select a dotfile to edit: "
-                          (chezmoi-managed-files)
-                          nil t)))
+   (list (chezmoi--completing-read "Select a dotfile to edit: "
+                                   (chezmoi-managed-files)
+                                   'project-file)))
   (let ((source-file (chezmoi-source-file file)))
     (when source-file
       (find-file source-file)
@@ -298,8 +306,9 @@ Prefix ARG is passed to `chezmoi-write'."
              files))
          current-prefix-arg))
   (let (file)
-    (while (and (setq file (completing-read "Select file to sync." " (C-g to stop): "
-                                            files))
+    (while (and (setq file (chezmoi--completing-read "Select file to sync. (C-g to stop): "
+                                                     files
+                                                     'project-file))
                 (chezmoi-write file arg))
       (setq files (remove file files)))))
 
