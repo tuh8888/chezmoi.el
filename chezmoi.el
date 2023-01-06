@@ -36,9 +36,7 @@
 
 ;;; Code:
 (require 'cl-lib)
-(require 'chezmoi-dired)
-(require 'chezmoi-ediff)
-(require 'chezmoi-magit)
+(require 'chezmoi-core)
 (require 'chezmoi-template)
 (require 'custom)
 (require 'diff-mode)
@@ -50,45 +48,8 @@
 (require 'whitespace)
 (require 'window)
 
-(defgroup chezmoi nil
-  "Customization group for `chezmoi-mode'."
-  :group 'chezmoi)
-
-(defcustom chezmoi-command "chezmoi"
-  "The location of the chezmoi command."
-  :type '(string)
-  :group 'chezmoi)
-
-(defvar chezmoi-command-error-regex "chezmoi:"
-  "Regex for detecting if chezmoi has encountered an error.")
-
-(defvar chezmoi-source-state-prefix-attrs
-  '("after_"
-    "before_"
-    "create_"
-    "dot_"
-    "empty_"
-    "encrypted_"
-    "exact_"
-    "executable_"
-    "literal_"
-    "modify_"
-    "once_"
-    "onchange_"
-    "private_"
-    "readonly_"
-    "remove_"
-    "run_"
-    "symlink_")
-  "Source state attribute prefixes.")
-
-(defvar chezmoi-source-state-suffix-attrs
-  '(".literal"
-    ".tmpl")
-  "Source state attribute suffixes.")
-
 (defun chezmoi--dispatch (args)
-  ""
+  "Dispatch chezmoi command to shell, passing ARGS."
   (let ((b (get-buffer-create "*chezmoi*")))
     (with-current-buffer b
       (erase-buffer)
@@ -225,8 +186,8 @@ If ARG is non-nil, switch to the diff-buffer."
 (defun chezmoi-write (&optional file arg)
   "Sync FILE. How it syncs depends if FILE is in source or target.
 If FILE is in source state, run =chezmoi apply= on the target to overwrite it.
-With prefix ARG, use `shell' to run =chezmoi apply= command. This is helpful for
-resolving some issues.
+With prefix ARG, use `shell' to run =chezmoi apply= command.  This is helpful
+for resolving some issues.
 
 If FILE is in target state, copy it to the source buffer without saving.
 With prefix ARG, save the source buffer."
@@ -264,6 +225,8 @@ With prefix ARG, save the source buffer."
                    nil)))))))
 
 (defun chezmoi--completing-read (prompt choices category)
+  "Completing read with meta data.
+PROMPT, CHOICES, and CATEGORY are passed to `complete-with-action'."
   (completing-read prompt
                    (lambda (string predicate action)
                      (if (eq action 'metadata)

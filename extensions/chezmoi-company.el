@@ -30,6 +30,7 @@
 
 ;;; Code:
 
+(require 'chezmoi)
 (require 'company)
 (require 'cl-lib)
 
@@ -66,7 +67,7 @@ Candidates are chezmoi data values corresponding to the path at point."
 
 (defun chezmoi-company--annotation (candidate)
   "Return annotation for CANDIDATE for company completion.
-The value of the path if candidate is a string. Otherwise indicate type."
+The value of the path if candidate is a string.  Otherwise indicate type."
   (let* ((data (chezmoi-company--data-at-point))
          (value (when (hash-table-p data) (gethash candidate data))))
     (cond ((stringp value) (format " (%s)" value))
@@ -74,7 +75,9 @@ The value of the path if candidate is a string. Otherwise indicate type."
           (t ""))))
 
 (defun chezmoi-company-backend (command &optional arg &rest ignored)
-  "Company backend for chezmoi. Provides completion using =chezmoi data=."
+  "Company backend for chezmoi.
+Provides completion using =chezmoi data=.  COMMAND, ARG, and IGNORED
+are passed to `company'."
   (interactive (list 'interactive))
   (cl-case command
     (interactive (company-begin-backend 'chezmoi-company-backend))

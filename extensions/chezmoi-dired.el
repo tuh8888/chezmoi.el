@@ -1,9 +1,9 @@
-;;; chezmoi-magit.el --- Magit integration for chezmoi -*- lexical-binding: t -*-
+;;; chezmoi-dired.el --- Dired integration for chezmoi -*- lexical-binding: t -*-
 
 ;; Author: Harrison Pielke-Lombardo
 ;; Maintainer: Harrison Pielke-Lombardo
 ;; Version: 1.0.0
-;; Package-Requires: ((emacs "26.1") (magit "3.0.0"))
+;; Package-Requires: ((emacs "26.1"))
 ;; Homepage: http://www.github.com/tuh8888/chezmoi.el
 ;; Keywords: vc
 
@@ -26,17 +26,18 @@
 
 ;;; Commentary:
 
-;; Provides `magit' integration for `chezmoi'.
+;; Provides `dired' integration for `chezmoi'.
 
 ;;; Code:
 
-(require 'magit)
+(require 'dired)
+(require 'chezmoi)
 
-(defun chezmoi-magit-status ()
-  "Show the status of the chezmoi source repository."
+(defun chezmoi-dired-add-marked-files ()
+  "Add files marked in Dired to source state."
   (interactive)
-  (magit-status-setup-buffer (cl-first (chezmoi--dispatch "source-path"))))
+  (dolist (file (dired-get-marked-files))
+    (shell-command (concat chezmoi-command " add " (shell-quote-argument file)))))
 
-(provide 'chezmoi-magit)
-
-;;; chezmoi-magit.el ends here
+(provide 'chezmoi-dired)
+;;; chezmoi-dired.el ends here

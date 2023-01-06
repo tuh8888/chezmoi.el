@@ -31,14 +31,15 @@
 ;;; Code:
 
 (require 'ediff)
-(require 'chezmoi-template)
+(require 'chezmoi)
 
 (defvar-local chezmoi-ediff--source-file nil
   "Current ediff source-file.")
 
 (defun chezmoi-ediff--ediff-get-region-contents (n buf-type ctrl-buf &optional start end)
   "An overriding fn for `ediff-get-region-contents'.
-Converts and applies template diffs from the source-file."
+Converts and applies template diffs from the source-file.
+N, BUF-TYPE, CTRL-BUF, START, and END are all passed to `ediff'."
   (ediff-with-current-buffer
       (ediff-with-current-buffer ctrl-buf (ediff-get-buffer buf-type))
     (if (string-equal chezmoi-ediff--source-file (buffer-file-name))

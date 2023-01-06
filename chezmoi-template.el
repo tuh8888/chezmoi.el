@@ -28,6 +28,7 @@
 
 ;;; Code:
 (require 'subr-x)
+(require 'chezmoi-core)
 
 (defcustom chezmoi-template-display-p nil
   "Whether to display templates."
