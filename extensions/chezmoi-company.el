@@ -2,8 +2,8 @@
 
 ;; Author: Harrison Pielke-Lombardo
 ;; Maintainer: Harrison Pielke-Lombardo
-;; Version: 1.0.0
-;; Package-Requires: ((emacs "27.1"))
+;; Version: 1.1.0
+;; Package-Requires: ((emacs "27.1") (company "0.9.13") (chezmoi "1.1.0"))
 ;; Homepage: http://www.github.com/tuh8888/chezmoi.el
 ;; Keywords: vc
 
@@ -32,7 +32,6 @@
 
 (require 'chezmoi)
 (require 'company)
-(require 'cl-lib)
 
 (defvar chezmoi-company-key-regex "\\."
   "Regex for splitting keys.")
