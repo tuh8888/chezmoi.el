@@ -2,8 +2,8 @@
 
 ;; Author: Harrison Pielke-Lombardo
 ;; Maintainer: Harrison Pielke-Lombardo
-;; Version: 1.0.0
-;; Package-Requires: ((emacs "26.1"))
+;; Version: 1.1.0
+;; Package-Requires: ((emacs "26.1") (chezmoi "1.1.0"))
 ;; Homepage: http://www.github.com/tuh8888/chezmoi.el
 ;; Keywords: vc
 
@@ -31,14 +31,15 @@
 ;;; Code:
 
 (require 'ediff)
-(require 'chezmoi-template)
+(require 'chezmoi)
 
 (defvar-local chezmoi-ediff--source-file nil
   "Current ediff source-file.")
 
 (defun chezmoi-ediff--ediff-get-region-contents (n buf-type ctrl-buf &optional start end)
   "An overriding fn for `ediff-get-region-contents'.
-Converts and applies template diffs from the source-file."
+Converts and applies template diffs from the source-file.
+N, BUF-TYPE, CTRL-BUF, START, and END are all passed to `ediff'."
   (ediff-with-current-buffer
       (ediff-with-current-buffer ctrl-buf (ediff-get-buffer buf-type))
     (if (string-equal chezmoi-ediff--source-file (buffer-file-name))
