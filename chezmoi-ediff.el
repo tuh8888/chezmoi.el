@@ -30,8 +30,39 @@
 
 ;;; Code:
 
+(require 'chezmoi)
 (require 'ediff)
 (require 'chezmoi-template)
+(require 'json)
+
+(defun chezmoi--get-config()
+  (with-temp-buffer
+    (let* ((chez (make-process :name "chezmoi-dump-config"
+                              :buffer (current-buffer)
+                              :stderr nil
+                              :command (list "chezmoi" "dump-config")
+                              :sentinel 'ignore
+                              :connection-type 'pipe))
+           (json-array-type 'list))
+      (process-send-eof chez)
+      (while (accept-process-output chez))
+      (if (eq 0 (process-exit-status chez))
+          (progn
+            (goto-char (point-min))
+            (json-read))
+        (message "error decoding: %s" (buffer-string))))))
+
+(defun chezmoi--config-assoc-recursive (alist &rest keys)
+  "Recursively find KEYs in ALIST."
+  (while keys
+    (setq alist (cdr (assoc (pop keys) alist))))
+  alist)
+
+(defun chezmoi-get-recipients()
+  (let* ((config (chezmoi--get-config))
+         (recipient (chezmoi--config-assoc-recursive config 'age 'recipient))
+         (recipients (chezmoi--config-assoc-recursive config 'age 'recipients)))
+    (append (if (string-empty-p recipient) nil recipient) recipients)))
 
 (defvar-local chezmoi-ediff--source-file nil
   "Current ediff source-file.")
@@ -56,10 +87,16 @@ Note: Does not run =chezmoi merge=."
    (list (chezmoi--completing-read "Select a dotfile to merge: "
 				   (chezmoi-changed-files)
 				   'project-file)))
-  (let ((source-file (chezmoi-find dotfile)))
+  (let* ((source-path (chezmoi-source-file dotfile))
+         (sourcebuffer (create-file-buffer source-path))
+         (source-file (chezmoi-find dotfile))
+         (file-a (find-file-noselect dotfile)))
     (advice-add 'ediff-get-region-contents :override #'chezmoi-ediff--ediff-get-region-contents)
     (setq chezmoi-ediff--source-file source-file)
-    (ediff-files source-file dotfile)
+    (with-current-buffer sourcebuffer
+      (setq-local age-file-recipients (chezmoi-get-recipients))
+      (insert-file-contents source-file t))
+    (ediff-buffers file-a sourcebuffer)
     (add-hook 'ediff-quit-hook
               #'(lambda () (advice-remove 'ediff-get-region-contents #'chezmoi-ediff--ediff-get-region-contents))
               nil t)))
