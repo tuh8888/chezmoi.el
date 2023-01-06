@@ -53,10 +53,9 @@ Converts and applies template diffs from the source-file."
   "Choose a DOTFILE to merge with its source using `ediff'.
 Note: Does not run =chezmoi merge=."
   (interactive
-   (list (completing-read
-          "Select a dotfile to merge: "
-          (chezmoi-changed-files)
-          nil t)))
+   (list (chezmoi--completing-read "Select a dotfile to merge: "
+				   (chezmoi-changed-files)
+				   'project-file)))
   (let ((source-file (chezmoi-find dotfile)))
     (advice-add 'ediff-get-region-contents :override #'chezmoi-ediff--ediff-get-region-contents)
     (setq chezmoi-ediff--source-file source-file)
