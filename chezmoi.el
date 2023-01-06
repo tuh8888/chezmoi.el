@@ -208,10 +208,10 @@ If ARG is non-nil, switch to the diff-buffer."
   (unless (chezmoi-target-file-p file)
     (let ((v (chezmoi-version)))
       (if (or (and v (string-match-p "^[0-9]" v) (version<= "2.12.0" v)) (string= "dev" v))
-          (thread-last (when file (shell-quote-argument file))
-                       (format "target-path %s")
-                       chezmoi--dispatch
-                       cl-first)
+	  (thread-last (when file (shell-quote-argument file))
+		       (format "target-path %s")
+		       chezmoi--dispatch
+		       cl-first)
 	(chezmoi--manual-target-file file)))))
 
 (defun chezmoi-source-file (file)
