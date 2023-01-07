@@ -51,10 +51,13 @@
   "Face for displaying chezmoi templates values."
   :group 'chezmoi)
 
-(defcustom chezmoi-template-regex "{{ \\.[^[:space:]]+ }}" ; (pcre-to-elisp "\\{\\{ \\.\\S+ \\}\\}")
+(defcustom chezmoi-template-regex "{{ *\\(\\.[^[:space:]]* *\\)}}" ; (pcre-to-elisp "\\{\\{ \\.\\S+ \\}\\}")
   "Regex for detecting chezmoi templates."
   :type '(choice string regexp)
   :group 'chezmoi)
+
+(defvar chezmoi-template-key-regex "\\."
+  "Regex for splitting keys.")
 
 (defun chezmoi-template-execute (template)
   "Convert a TEMPLATE string using chezmoi'."

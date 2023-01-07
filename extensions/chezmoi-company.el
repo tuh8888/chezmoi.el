@@ -26,20 +26,17 @@
 
 ;;; Commentary:
 
-;; Provides a `company' backend `chezmoi'.
+;; Provides a `company' backend for `chezmoi'.
 
 ;;; Code:
 
 (require 'chezmoi)
 (require 'company)
 
-(defvar chezmoi-company-key-regex "\\."
-  "Regex for splitting keys.")
-
 (defun chezmoi-company--keys-at-point ()
   "Convert the point to a sequence of keys."
   (when-let ((thing (thing-at-point 'sexp t)))
-    (split-string thing chezmoi-company-key-regex)))
+    (split-string thing chezmoi-template-key-regex)))
 
 (defun chezmoi-company--data-at-point ()
   "Chezmoi data corresponding to the key path at the current point."
