@@ -53,33 +53,34 @@ Candidates are chezmoi data values corresponding to the path at point."
 	(hash-table-keys data)
       (list data))))
 
+(defun chezmoi-cape--bounds ()
+  "TODO."
+  (let* ((bounds (cape--bounds 'word))
+	 (beg (car bounds))
+	 (end (cdr bounds)))
+    (if (string-match "{{" (buffer-substring-no-properties beg end))
+	(let* ((bounds (cape--bounds 'char))
+	       (beg (car bounds))
+	       (end (1- (cdr bounds))))
+	  (cons beg end))
+      bounds)))
+
 (defun chezmoi-capf ()
   "Complete current template."
   (when (thing-at-point-looking-at chezmoi-template-regex)
     (let* ((candidates (thread-last 1
 				    match-string
-				    chezmoi-cape--next-keys 
-				   )))
-
-      (let* ((candidates (apply-partially (lambda (c _) c) candidates))
-	     (bounds (cape--bounds 'word))
-	     (beg (car bounds))
-	     (end (cdr bounds))
-	     (s (buffer-substring-no-properties beg end))
-	     (bounds (if (string-match "{{" s)
-			 (let* ((bounds (cape--bounds 'char))
-				(beg (1- (car bounds)))
-			       (end (1- (cdr bounds))))
-			   (cons beg end))
-		       bounds))
+				    chezmoi-cape--next-keys
+				    (apply-partially (lambda (c _) c)))))
+      (let* ((bounds (chezmoi-cape--bounds))
 	     (beg (car bounds))
 	     (end (cdr bounds)))
 	(buffer-substring-no-properties beg end)
 	`(,beg ,end
-	  ,(cape--table-with-properties
-	    (cape--cached-table beg end candidates 'prefix)
-	    :category 'cape-keyword)
-	  ,@chezmoi-cape--properties)))))
+	       ,(cape--table-with-properties
+		 (cape--cached-table beg end candidates 'prefix)
+		 :category 'cape-keyword)
+	       ,@chezmoi-cape--properties)))))
 
 (provide 'chezmoi-cape)
 
