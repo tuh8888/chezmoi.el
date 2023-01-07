@@ -32,37 +32,11 @@
 
 (require 'chezmoi)
 (require 'ediff)
-(require 'chezmoi-template)
-(require 'json)
 
-(defun chezmoi--get-config()
-  (with-temp-buffer
-    (let* ((chez (make-process :name "chezmoi-dump-config"
-                              :buffer (current-buffer)
-                              :stderr nil
-                              :command (list "chezmoi" "dump-config")
-                              :sentinel 'ignore
-                              :connection-type 'pipe))
-           (json-array-type 'list))
-      (process-send-eof chez)
-      (while (accept-process-output chez))
-      (if (eq 0 (process-exit-status chez))
-          (progn
-            (goto-char (point-min))
-            (json-read))
-        (message "error decoding: %s" (buffer-string))))))
-
-(defun chezmoi--config-assoc-recursive (alist &rest keys)
-  "Recursively find KEYs in ALIST."
-  (while keys
-    (setq alist (cdr (assoc (pop keys) alist))))
-  alist)
-
-(defun chezmoi-get-recipients()
-  (let* ((config (chezmoi--get-config))
-         (recipient (chezmoi--config-assoc-recursive config 'age 'recipient))
-         (recipients (chezmoi--config-assoc-recursive config 'age 'recipients)))
-    (append (if (string-empty-p recipient) nil recipient) recipients)))
+(defcustom chezmoi-ediff-force-overwrite t
+  "Whether to force file overwrite when ediff finishes with identical buffers."
+  :type '(boolean)
+  :group 'chezmoi)
 
 (defvar-local chezmoi-ediff--source-file nil
   "Current ediff source-file.")
@@ -80,26 +54,37 @@ Converts and applies template diffs from the source-file."
        (or start (ediff-get-diff-posn buf-type 'beg n ctrl-buf))
        (or end (ediff-get-diff-posn buf-type 'end n ctrl-buf))))))
 
-(defun chezmoi-ediff (dotfile)
-  "Choose a DOTFILE to merge with its source using `ediff'.
+(defun chezmoi-ediff--ediff-cleanup-hook ()
+  (when chezmoi-ediff-force-overwrite
+    (when-let (source-file (or (with-current-buffer ediff-buffer-A chezmoi-ediff--source-file)
+			       (with-current-buffer ediff-buffer-B chezmoi-ediff--source-file)))
+      (when (equal (with-current-buffer ediff-buffer-A (buffer-string))
+		   (with-current-buffer ediff-buffer-B (buffer-string)))
+	(chezmoi-write source-file t)))))
+
+(defvar chezmoi-ediff--ediff-quit-hook ()
+  (advice-remove 'ediff-get-region-contents #'chezmoi-ediff--ediff-get-region-contents))
+
+(defun chezmoi-ediff (file)
+  "Choose a FILE to merge with its source using `ediff'.
 Note: Does not run =chezmoi merge=."
   (interactive
    (list (chezmoi--completing-read "Select a dotfile to merge: "
 				   (chezmoi-changed-files)
 				   'project-file)))
-  (let* ((source-path (chezmoi-source-file dotfile))
-         (sourcebuffer (create-file-buffer source-path))
-         (source-file (chezmoi-find dotfile))
-         (file-a (find-file-noselect dotfile)))
-    (advice-add 'ediff-get-region-contents :override #'chezmoi-ediff--ediff-get-region-contents)
-    (setq chezmoi-ediff--source-file source-file)
-    (with-current-buffer sourcebuffer
-      (setq-local age-file-recipients (chezmoi-get-recipients))
-      (insert-file-contents source-file t))
-    (ediff-buffers file-a sourcebuffer)
-    (add-hook 'ediff-quit-hook
-              #'(lambda () (advice-remove 'ediff-get-region-contents #'chezmoi-ediff--ediff-get-region-contents))
-              nil t)))
+  (let* ((ident (when (fboundp 'chezmoi-age-get-identity) (chezmoi-age-get-identity)))
+	 (recips (when (fboundp 'chezmoi-age-get-recipients) (chezmoi-age-get-recipients)))
+	 (age-always-use-default-keys (and (equal ident age-default-identity)
+					   (equal (if (equal 1 (length recips))
+						      (car recips)
+						    recips)
+						  age-default-recipient))))
+    (let* ((source-file (chezmoi-find file)))
+      (advice-add 'ediff-get-region-contents :override #'chezmoi-ediff--ediff-get-region-contents)
+      (setq chezmoi-ediff--source-file source-file)
+      (ediff-files source-file file)
+      (add-hook 'ediff-cleanup-hook #'chezmoi-ediff--ediff-cleanup-hook nil t)
+      (add-hook 'ediff-quit-hook #'chezmoi-ediff--ediff-quit-hook nil t))))
 
 (provide 'chezmoi-ediff)
 ;;; chezmoi-ediff.el ends here
