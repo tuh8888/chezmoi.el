@@ -31,23 +31,17 @@
 ;;; Code:
 (require 'chezmoi)
 
-(defun chezmoi-age--config-assoc-recursive (alist &rest keys)
-  "Recursively find KEYS in ALIST."
-  (while keys
-    (setq alist (cdr (assoc (pop keys) alist))))
-  alist)
-
 (defun chezmoi-age-get-recipients ()
   "Get age recipients."
-  (let* ((config (chezmoi--get-config))
-	 (recipient (gethash "recipient" (gethash "age" (chezmoi--get-config))))
-	 (recipients (gethash "recipients" (gethash "age" (chezmoi--get-config)))))
+  (let* ((config (chezmoi-get-config))
+	 (recipient (gethash "recipient" (gethash "age" config)))
+	 (recipients (gethash "recipients" (gethash "age" config))))
     (append (if (string-empty-p recipient) nil (list recipient)) recipients)))
 
 (defun chezmoi-age-get-identity ()
   "Get age recipients."
-  (let ((config (chezmoi--get-config)))
-    (gethash "identity" (gethash "age" (chezmoi--get-config)))))
+  (let ((config (chezmoi-get-config)))
+    (gethash "identity" (gethash "age" config))))
 
 (provide 'chezmoi-age)
 

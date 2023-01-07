@@ -113,7 +113,11 @@ If ARG is non-nil, switch to the diff-buffer."
       (or (match-string 4 s)
 	  (match-string 2 s)))))
 
-(defun chezmoi--get-config()
+(defun chezmoi-get-data ()
+  "Return chezmoi data."
+  (json-parse-string (apply #'concat (chezmoi--dispatch "data"))))
+
+(defun chezmoi-get-config()
   (let ((v (chezmoi-version)))
     (when (or (and v (string-match-p "^[0-9]" v) (version<= "2.27.0" v)) (string= "dev" v))
       (let ((config-string (apply #'concat (chezmoi--dispatch "dump-config"))))
