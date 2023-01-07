@@ -113,6 +113,14 @@ If ARG is non-nil, switch to the diff-buffer."
       (or (match-string 4 s)
 	  (match-string 2 s)))))
 
+(defun chezmoi--get-config()
+  (let ((v (chezmoi-version)))
+    (when (or (and v (string-match-p "^[0-9]" v) (version<= "2.27.0" v)) (string= "dev" v))
+      (let ((config-string (apply #'concat (chezmoi--dispatch "dump-config"))))
+	(json-parse-string config-string
+			   :array-type 'list
+			   :null-object nil)))))
+
 (defun chezmoi--unchezmoi-source-file-name (source-file)
   "Remove chezmoi attributes from SOURCE-FILE."
   (let* ((base-name (file-name-base source-file))
@@ -208,20 +216,18 @@ With prefix ARG, save the source buffer."
 
       ;; File is in source state
       (let* ((source-file file)
-	     (target-file (chezmoi-target-file source-file))
-	     (cmd (format "apply %s" (shell-quote-argument target-file))))
-	(cond (arg (progn
-		     (shell "*Chezmoi Shell*")
-		     (insert (format "%s %s" chezmoi-command cmd))
-		     (comint-send-input)
-		     target-file))
-	      ((chezmoi--dispatch cmd) (progn
-					 (message "Wrote target: %s" target-file)
-					 target-file))
-	      (t (progn
-		   (message "Failed to write %s. Use chezmoi-write with prefix arg to resolve with chezmoi."
-			    target-file)
-		   nil)))))))
+             (target-file (chezmoi-target-file source-file))
+             (cmd (format "apply %s%s"
+			  (shell-quote-argument target-file)
+			  (if arg " --force" ""))))
+        (if (chezmoi--dispatch cmd)
+	    (progn
+              (message "Wrote target: %s" target-file)
+              target-file)
+          (progn
+            (message "Failed to write %s. Use chezmoi-write with prefix arg to resolve with chezmoi."
+                     target-file)
+            nil))))))
 
 (defun chezmoi--completing-read (prompt choices category)
   "Completing read with meta data.
