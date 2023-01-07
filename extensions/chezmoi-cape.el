@@ -59,10 +59,22 @@ Candidates are chezmoi data values corresponding to the path at point."
     (let* ((candidates (thread-last 1
 				    match-string
 				    chezmoi-cape--next-keys 
-				    (apply-partially (lambda (c _) c)))))
-      (let* ((bounds (cape--bounds 'word))
+				   )))
+
+      (let* ((candidates (apply-partially (lambda (c _) c) candidates))
+	     (bounds (cape--bounds 'word))
+	     (beg (car bounds))
+	     (end (cdr bounds))
+	     (s (buffer-substring-no-properties beg end))
+	     (bounds (if (string-match "{{" s)
+			 (let* ((bounds (cape--bounds 'char))
+				(beg (1- (car bounds)))
+			       (end (1- (cdr bounds))))
+			   (cons beg end))
+		       bounds))
 	     (beg (car bounds))
 	     (end (cdr bounds)))
+	(buffer-substring-no-properties beg end)
 	`(,beg ,end
 	  ,(cape--table-with-properties
 	    (cape--cached-table beg end candidates 'prefix)
