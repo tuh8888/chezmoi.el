@@ -87,12 +87,18 @@
     ".tmpl")
   "Source state attribute suffixes.")
 
+(defmacro chezmoi--locally (&rest body)
+  "Ensure BODY is run with a local `default-directory'."
+  `(let ((default-directory (if (file-remote-p default-directory) (expand-file-name "~") default-directory)))
+     ,@body))
+
 (defun chezmoi--dispatch (args)
   ""
   (let ((b (get-buffer-create "*chezmoi*")))
     (with-current-buffer b
       (erase-buffer)
-      (shell-command (format "%s %s" chezmoi-command args) b)
+      (chezmoi--locally
+       (shell-command (format "%s %s" chezmoi-command args) b))
       (let ((s (buffer-string)))
         (let ((result (split-string (string-trim s) "\n")))
           (unless (cl-some (lambda (l) (string-match-p chezmoi-command-error-regex l)) result)
@@ -122,7 +128,7 @@ If ARG is non-nil, switch to the diff-buffer."
   (let ((b (get-buffer-create "*chezmoi-diff*")))
     (with-current-buffer b
       (erase-buffer)
-      (shell-command (concat chezmoi-command " diff") b))
+      (chezmoi--locally (shell-command (concat chezmoi-command " diff") b)))
     (unless arg
       (switch-to-buffer b)
       (diff-mode)
