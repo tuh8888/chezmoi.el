@@ -2,8 +2,8 @@
 
 ;; Author: Harrison Pielke-Lombardo
 ;; Maintainer: Harrison Pielke-Lombardo
-;; Version: 1.0.0
-;; Package-Requires: ((emacs "27.1"))
+;; Version: 1.1.0
+;; Package-Requires: ((emacs "27.1") (company "0.9.13") (chezmoi "1.1.0"))
 ;; Homepage: http://www.github.com/tuh8888/chezmoi.el
 ;; Keywords: vc
 
@@ -26,29 +26,22 @@
 
 ;;; Commentary:
 
-;; Provides a `company' backend `chezmoi'.
+;; Provides a `company' backend for `chezmoi'.
 
 ;;; Code:
 
+(require 'chezmoi)
 (require 'company)
-(require 'cl-lib)
-
-(defvar chezmoi-company-key-regex "\\."
-  "Regex for splitting keys.")
-
-(defun chezmoi-company-get-data ()
-  "Return chezmoi data."
-  (json-parse-string (apply #'concat (chezmoi--dispatch "data"))))
 
 (defun chezmoi-company--keys-at-point ()
   "Convert the point to a sequence of keys."
   (when-let ((thing (thing-at-point 'sexp t)))
-    (split-string thing chezmoi-company-key-regex)))
+    (split-string thing chezmoi-template-key-regex)))
 
 (defun chezmoi-company--data-at-point ()
   "Chezmoi data corresponding to the key path at the current point."
   (let ((keys (remove "" (butlast (chezmoi-company--keys-at-point)))))
-    (cl-reduce (lambda (data k) (gethash k data)) keys :initial-value (chezmoi-company-get-data))))
+    (cl-reduce (lambda (data k) (gethash k data)) keys :initial-value (chezmoi-get-data))))
 
 (defun chezmoi-company--prefix ()
   "Return prefix for company completion."
@@ -66,7 +59,7 @@ Candidates are chezmoi data values corresponding to the path at point."
 
 (defun chezmoi-company--annotation (candidate)
   "Return annotation for CANDIDATE for company completion.
-The value of the path if candidate is a string. Otherwise indicate type."
+The value of the path if candidate is a string.  Otherwise indicate type."
   (let* ((data (chezmoi-company--data-at-point))
          (value (when (hash-table-p data) (gethash candidate data))))
     (cond ((stringp value) (format " (%s)" value))
@@ -74,7 +67,9 @@ The value of the path if candidate is a string. Otherwise indicate type."
           (t ""))))
 
 (defun chezmoi-company-backend (command &optional arg &rest ignored)
-  "Company backend for chezmoi. Provides completion using =chezmoi data=."
+  "Company backend for chezmoi.
+Provides completion using =chezmoi data=.  COMMAND, ARG, and IGNORED
+are passed to `company'."
   (interactive (list 'interactive))
   (cl-case command
     (interactive (company-begin-backend 'chezmoi-company-backend))

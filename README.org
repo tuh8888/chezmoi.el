@@ -60,7 +60,7 @@ The recording above demonstrates editing a chezmoi template with source file on 
    Emacs has a lovely package called ~ediff~ for comparing differences between files which is perfect for when the source and target states get out of sync. Quickly resolve inconsistencies between source and target states using ~chezmoi-ediff~. Or view the raw diff using ~chezmoi-diff~ if you prefer. Pipe this into your own diff workflow using ~(chezmoi-diff 1)~ to give raw diff input to some other diff management tool.
 
 
-** With Company
+** Company
 
    Company integration is provided through ~chezmoi-company-backend~. Simply add it to to ~company-backends~. This will show completions for when editing template variables.
 
@@ -69,6 +69,14 @@ The recording above demonstrates editing a chezmoi template with source file on 
 (add-hook 'chezmoi-mode-hook #'(lambda () (if chezmoi-mode
                                               (add-to-list 'company-backends 'chezmoi-company-backend)
                                             (delete 'chezmoi-company-backend 'company-backends))))
+   #+end_src
+
+** Cape
+   Cape integration is provided through ~chezmoi-capf~. Simply add it to to ~completion-at-point-functions~. This will show completions for when editing template variables.
+
+   #+begin_src emacs-lisp :noweb yes
+(require 'chezmoi-cape)
+(add-to-list 'completion-at-point-functions #'chezmoi-capf)
    #+end_src
 
 ** Dired
