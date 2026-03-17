@@ -2,8 +2,8 @@
 
 ;; Author: Harrison Pielke-Lombardo
 ;; Maintainer: Harrison Pielke-Lombardo
-;; Version: 1.1.0
-;; Package-Requires: ((emacs "26.1") (chezmoi "1.1.0"))
+;; Version: 1.1.1
+;; Package-Requires: ((emacs "26.1") (chezmoi "1.1.1"))
 ;; Homepage: http://www.github.com/tuh8888/chezmoi.el
 ;; Keywords: vc
 
@@ -38,6 +38,13 @@
   (interactive)
   (dolist (file (dired-get-marked-files))
     (shell-command (concat chezmoi-command " add " (shell-quote-argument file)))))
+
+(defun chezmoi-dired-forget-marked-files ()
+  "Removes files marked in Dired from source state."
+  (interactive)
+  (dolist (file (dired-get-marked-files))
+    (when (yes-or-no-p (format "Remove %s from source state? " file))
+      (shell-command (concat chezmoi-command " forget --force " (shell-quote-argument file))))))
 
 (provide 'chezmoi-dired)
 ;;; chezmoi-dired.el ends here
