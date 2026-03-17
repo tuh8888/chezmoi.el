@@ -2,7 +2,7 @@
 
 ;; Author: Harrison Pielke-Lombardo
 ;; Maintainer: Harrison Pielke-Lombardo
-;; Version: 1.1.0
+;; Version: 1.2.0
 ;; Package-Requires: ((emacs "26.1"))
 ;; Homepage: http://www.github.com/tuh8888/chezmoi.el
 ;; Keywords: vc
@@ -42,6 +42,26 @@
 (require 'shell)
 (require 'subr-x)
 
+(defcustom chezmoi-extensions nil
+  "List of extensions to load (e.g., '(dired ediff)).
+Supported: dired, ediff, company, cape, magit, age."
+  :type '(repeat symbol)
+  :group 'chezmoi
+  :set (function
+        (lambda (sym value)
+          (set sym value)
+          (when (and value (featurep 'chezmoi))
+            (chezmoi--load-extensions)))))
+
+(defun chezmoi--load-extensions ()
+  "Load extensions listed in `chezmoi-extensions'."
+(let ((ext-dir (expand-file-name "extensions"
+                                    (file-name-directory (locate-library "chezmoi")))))
+  (when (and ext-dir (file-directory-p ext-dir))
+    (add-to-list 'load-path ext-dir t)
+    (dolist (ext chezmoi-extensions)
+      (require (intern (format "chezmoi-%s" ext)) nil t)))))
+
 (defmacro chezmoi--locally (&rest body)
   "Ensure BODY is run with a local `default-directory'."
   `(let ((default-directory (if (file-remote-p default-directory) (expand-file-name "~") default-directory)))
@@ -55,26 +75,26 @@
       (chezmoi--locally
        (shell-command (format "%s %s" chezmoi-command args) b))
       (let ((s (buffer-string)))
-	(let ((result (split-string (string-trim s) "\n")))
-	  (unless (cl-some (lambda (l) (string-match-p chezmoi-command-error-regex l)) result)
-	    result))))))
+	    (let ((result (split-string (string-trim s) "\n")))
+	      (unless (cl-some (lambda (l) (string-match-p chezmoi-command-error-regex l)) result)
+	        result))))))
 
 (defun chezmoi-managed ()
   "List all files and directories managed by chezmoi."
   (thread-last "managed"
-	       chezmoi--dispatch
-	       (cl-map 'list (lambda (file) (concat "~/" file)))))
+	           chezmoi--dispatch
+	           (cl-map 'list (lambda (file) (concat "~/" file)))))
 
 (defun chezmoi-managed-files ()
   "List only files managed by chezmoi."
   (thread-last (chezmoi-managed)
-	       (cl-remove-if #'file-directory-p)))
+	           (cl-remove-if #'file-directory-p)))
 
 (defun chezmoi-target-file-p (file)
   "Return non-nil if FILE is in the target state."
   (thread-last (chezmoi-managed-files)
-	       (cl-mapcar #'expand-file-name)
-	       (member (expand-file-name file))))
+	           (cl-mapcar #'expand-file-name)
+	           (member (expand-file-name file))))
 
 (defun chezmoi-diff (arg)
   "View output of =chezmoi diff= in a diff-buffer.
@@ -96,28 +116,28 @@ If ARG is non-nil, switch to the diff-buffer."
     (goto-char (point-max))
     (let (files line-beg)
       (while (setq line-beg (re-search-backward "^\\+\\{3\\} .*" nil t))
-	(let ((file-name (thread-first line-beg
-				       (buffer-substring-no-properties (line-end-position))
-				       (substring 5))))
-	  (push (concat "~" file-name) files)))
+	    (let ((file-name (thread-first line-beg
+				                       (buffer-substring-no-properties (line-end-position))
+				                       (substring 5))))
+	      (push (concat "~" file-name) files)))
       files)))
 
 (defun chezmoi-changed-p (file)
   "Return non-nil of FILE has changed."
   (member (if (chezmoi-target-file-p file)
-	      (chezmoi-target-file file)
-	    file)
-	  (chezmoi-changed-files)))
+	          (chezmoi-target-file file)
+	        file)
+	      (chezmoi-changed-files)))
 
 (defun chezmoi-version ()
   "Get version number of chezmoi."
   (let* ((s (cl-first (chezmoi--dispatch "--version")))
-	 (dev-re "\\(version \\(dev\\)\\)")
-	 (v-re " \\(v\\(\\([0-9]+\\.\\)?\\([0-9]+\\.\\)?\\(\\*\\|[0-9]+\\)\\)\\)")
-	 (re (concat dev-re "\\|" v-re)))
+	     (dev-re "\\(version \\(dev\\)\\)")
+	     (v-re " \\(v\\(\\([0-9]+\\.\\)?\\([0-9]+\\.\\)?\\(\\*\\|[0-9]+\\)\\)\\)")
+	     (re (concat dev-re "\\|" v-re)))
     (when (string-match re s)
       (or (match-string 4 s)
-	  (match-string 2 s)))))
+	      (match-string 2 s)))))
 
 (defun chezmoi-get-data ()
   "Return chezmoi data."
@@ -127,27 +147,27 @@ If ARG is non-nil, switch to the diff-buffer."
   (let ((v (chezmoi-version)))
     (when (or (and v (string-match-p "^[0-9]" v) (version<= "2.27.0" v)) (string= "dev" v))
       (let ((config-string (apply #'concat (chezmoi--dispatch "dump-config"))))
-	(json-parse-string config-string
-			   :array-type 'list
-			   :null-object nil)))))
+	    (json-parse-string config-string
+			               :array-type 'list
+			               :null-object nil)))))
 
 (defun chezmoi--unchezmoi-source-file-name (source-file)
   "Remove chezmoi attributes from SOURCE-FILE."
   (let* ((base-name (file-name-base source-file))
-	 (ext (file-name-extension source-file))
-	 (base-name (if ext
-			(concat (file-name-sans-extension base-name) "." ext)
-		      base-name))
-	 (base-name (cl-reduce (lambda (s attr) (replace-regexp-in-string attr "" s))
-			       chezmoi-source-state-suffix-attrs
-			       :initial-value base-name))
-	 (dir (file-name-directory source-file))
-	 (dir (when dir (cl-reduce (lambda (s attr) (let ((replacement (if (string= "dot_" attr) "." "")))
-						 (replace-regexp-in-string attr replacement s)))
-				   chezmoi-source-state-prefix-attrs
-				   :initial-value dir)))
-	 (stop-parsing nil)
-	 attr)
+	     (ext (file-name-extension source-file))
+	     (base-name (if ext
+			            (concat (file-name-sans-extension base-name) "." ext)
+		              base-name))
+	     (base-name (cl-reduce (lambda (s attr) (replace-regexp-in-string attr "" s))
+			                   chezmoi-source-state-suffix-attrs
+			                   :initial-value base-name))
+	     (dir (file-name-directory source-file))
+	     (dir (when dir (cl-reduce (lambda (s attr) (let ((replacement (if (string= "dot_" attr) "." "")))
+						                              (replace-regexp-in-string attr replacement s)))
+				                   chezmoi-source-state-prefix-attrs
+				                   :initial-value dir)))
+	     (stop-parsing nil)
+	     attr)
     (while (and (not stop-parsing) (setq attr (cl-some (lambda (attr) (when (string-prefix-p attr base-name) attr)) chezmoi-source-state-prefix-attrs)))
       (when (string= "literal_" attr) (setq stop-parsing t))
       (setq base-name (substring base-name (length attr)))
@@ -158,26 +178,26 @@ If ARG is non-nil, switch to the diff-buffer."
 (defun chezmoi--manual-target-file (source-file)
   "Return the target file corresponding to SOURCE-FILE."
   (let* ((to-find (chezmoi--unchezmoi-source-file-name source-file))
-	 (potential-targets (cl-remove-if-not (lambda (f)
-						(let* ((dir (replace-regexp-in-string "~" "~/.local/share/chezmoi" (file-name-directory f)))
-						       (base (file-name-base f))
-						       (ext (file-name-extension f))
-						       (corrected-f (concat dir
-									    "/"
-									    (if ext
-										(concat (file-name-sans-extension base) "." ext)
-									      base)))
-						       (trying (expand-file-name corrected-f)))
-						  (string= trying to-find)))
-					      (chezmoi-managed-files))))
+	     (potential-targets (cl-remove-if-not (lambda (f)
+						                        (let* ((dir (replace-regexp-in-string "~" "~/.local/share/chezmoi" (file-name-directory f)))
+						                               (base (file-name-base f))
+						                               (ext (file-name-extension f))
+						                               (corrected-f (concat dir
+									                                        "/"
+									                                        (if ext
+										                                        (concat (file-name-sans-extension base) "." ext)
+									                                          base)))
+						                               (trying (expand-file-name corrected-f)))
+						                          (string= trying to-find)))
+					                          (chezmoi-managed-files))))
     (cond ((zerop (length potential-targets)) (progn
-						(message "No target found")
-						nil))
-	  ((not (= 1 (length potential-targets)))
-	   (progn
-	     (message "Multiple targets found: %s. Using first" potential-targets)
-	     (cl-first potential-targets)))
-	  (t (cl-first potential-targets)))))
+						                        (message "No target found")
+						                        nil))
+	      ((not (= 1 (length potential-targets)))
+	       (progn
+	         (message "Multiple targets found: %s. Using first" potential-targets)
+	         (cl-first potential-targets)))
+	      (t (cl-first potential-targets)))))
 
 (make-obsolete-variable 'chezmoi--manual-target-file 'chezmoi-target-file "0.0.1")
 
@@ -186,19 +206,19 @@ If ARG is non-nil, switch to the diff-buffer."
   (unless (chezmoi-target-file-p file)
     (let ((v (chezmoi-version)))
       (if (or (and v (string-match-p "^[0-9]" v) (version<= "2.12.0" v)) (string= "dev" v))
-	  (thread-last (when file (shell-quote-argument file))
-		       (format "target-path %s")
-		       chezmoi--dispatch
-		       cl-first)
-	(chezmoi--manual-target-file file)))))
+	      (thread-last (when file (shell-quote-argument file))
+		               (format "target-path %s")
+		               chezmoi--dispatch
+		               cl-first)
+	    (chezmoi--manual-target-file file)))))
 
 (defun chezmoi-source-file (file)
   "Return the source file corresponding to FILE."
   (when (chezmoi-target-file-p file)
     (thread-last (when file (shell-quote-argument file))
-		 (format "source-path %s")
-		 chezmoi--dispatch
-		 cl-first)))
+		         (format "source-path %s")
+		         chezmoi--dispatch
+		         cl-first)))
 
 (defun chezmoi-write (&optional file arg)
   "Sync FILE.  How it syncs depends if FILE is in source or target.
@@ -209,29 +229,29 @@ for resolving some issues.
 If FILE is in target state, copy it to the source buffer without saving.
 With prefix ARG, save the source buffer."
   (interactive (list (buffer-file-name)
-		     current-prefix-arg))
+		             current-prefix-arg))
   (let ((file (if file file (buffer-file-name))))
     (if (chezmoi-target-file-p file)
-	;; File is in target state
-	(let* ((target-file file)
-	       (source-file (chezmoi-source-file target-file)))
-	  (with-current-buffer (find-file-noselect source-file)
-	    (replace-buffer-contents (find-file-noselect target-file))
-	    (if arg
-		(progn
-		  (save-buffer)
-		  (message "Wrote source: %s" source-file))
-	      (message "Wrote source (unsaved): %s" source-file))
-	    source-file))
+	    ;; File is in target state
+	    (let* ((target-file file)
+	           (source-file (chezmoi-source-file target-file)))
+	      (with-current-buffer (find-file-noselect source-file)
+	        (replace-buffer-contents (find-file-noselect target-file))
+	        (if arg
+		        (progn
+		          (save-buffer)
+		          (message "Wrote source: %s" source-file))
+	          (message "Wrote source (unsaved): %s" source-file))
+	        source-file))
 
       ;; File is in source state
       (let* ((source-file file)
              (target-file (chezmoi-target-file source-file))
              (cmd (format "apply %s%s"
-			  (shell-quote-argument target-file)
-			  (if arg " --force" ""))))
+			              (shell-quote-argument target-file)
+			              (if arg " --force" ""))))
         (if (chezmoi--dispatch cmd)
-	    (progn
+	        (progn
               (message "Wrote target: %s" target-file)
               target-file)
           (progn
@@ -243,11 +263,11 @@ With prefix ARG, save the source buffer."
   "Completing read with meta data.
 PROMPT, CHOICES, and CATEGORY are passed to `complete-with-action'."
   (completing-read prompt
-		   (lambda (string predicate action)
-		     (if (eq action 'metadata)
-			 `(metadata (category . ,category))
-		       (complete-with-action action choices string predicate)))
-		   nil t))
+		           (lambda (string predicate action)
+		             (if (eq action 'metadata)
+			             `(metadata (category . ,category))
+		               (complete-with-action action choices string predicate)))
+		           nil t))
 
 (defun chezmoi-find (file)
   "Edit a source FILE managed by chezmoi.
@@ -257,19 +277,19 @@ the buffer editing the source state is saved the target state is kept in sync.
 Note: Does not run =chezmoi edit=."
   (interactive
    (list (chezmoi--completing-read "Select a dotfile to edit: "
-				   (chezmoi-managed-files)
-				   'project-file)))
+				                   (chezmoi-managed-files)
+				                   'project-file)))
   (let ((source-file (chezmoi-source-file file)))
     (when source-file
       (find-file source-file)
       (let ((target-file (chezmoi-target-file source-file)))
-	(when-let ((mode (thread-first target-file
-				       file-name-nondirectory
-				       (assoc-default auto-mode-alist 'string-match))))
-	  (funcall mode))
-	(message target-file)
-	(unless chezmoi-mode (chezmoi-mode))
-	source-file))))
+	    (when-let ((mode (thread-first target-file
+				                       file-name-nondirectory
+				                       (assoc-default auto-mode-alist 'string-match))))
+	      (funcall mode))
+	    (message target-file)
+	    (unless chezmoi-mode (chezmoi-mode))
+	    source-file))))
 
 (defun chezmoi-sync-files (files &optional arg)
   "Iteratively select file from FILES to sync.
@@ -277,17 +297,17 @@ Interactively select whether to sync the source state or the target state.
 Prefix ARG is passed to `chezmoi-write'."
   (interactive
    (list (let ((choice (completing-read "Source or target?"
-					'("Source" "Target")))
-	       (files (chezmoi-changed-files)))
-	   (if (string-equal "Source" choice)
-	       (cl-mapcar #'chezmoi-source-file files)
-	     files))
-	 current-prefix-arg))
+					                    '("Source" "Target")))
+	           (files (chezmoi-changed-files)))
+	       (if (string-equal "Source" choice)
+	           (cl-mapcar #'chezmoi-source-file files)
+	         files))
+	     current-prefix-arg))
   (let (file)
     (while (and (setq file (chezmoi--completing-read "Select file to sync. (C-g to stop): "
-						     files
-						     'project-file))
-		(chezmoi-write file arg))
+						                             files
+						                             'project-file))
+		        (chezmoi-write file arg))
       (setq files (remove file files)))))
 
 (defun chezmoi-open-other (file)
@@ -296,8 +316,8 @@ Prefix ARG is passed to `chezmoi-write'."
   (if (chezmoi-target-file-p file)
       (chezmoi-find file)
     (thread-first file
-		  chezmoi-target-file
-		  find-file)))
+		          chezmoi-target-file
+		          find-file)))
 
 (defun chezmoi-font-lock-keywords ()
   "Keywords for font lock."
@@ -308,13 +328,13 @@ Prefix ARG is passed to `chezmoi-write'."
   :group 'chezmoi
   (if chezmoi-mode
       (progn
-	(unless (chezmoi-changed-p (buffer-file-name))
-	  (add-hook 'after-save-hook #'chezmoi-write 0 t))
-	(add-hook 'after-change-functions #'chezmoi-template--after-change nil 1)
+	    (unless (chezmoi-changed-p (buffer-file-name))
+	      (add-hook 'after-save-hook #'chezmoi-write 0 t))
+	    (add-hook 'after-change-functions #'chezmoi-template--after-change nil 1)
 
-	(font-lock-add-keywords nil (chezmoi-font-lock-keywords) 'append)
-	(chezmoi-template-buffer-display t)
-	(font-lock-ensure (point-min) (point-max)))
+	    (font-lock-add-keywords nil (chezmoi-font-lock-keywords) 'append)
+	    (chezmoi-template-buffer-display t)
+	    (font-lock-ensure (point-min) (point-max)))
     (progn
       (chezmoi-template-buffer-display nil)
 

@@ -55,6 +55,17 @@ The recording above demonstrates editing a chezmoi template with source file on 
 
 * Integrations
 
+** Extensions
+
+   You can load extensions by setting ~chezmoi-extensions~.  Supported
+   extensions: dired, ediff, company, cape, magit, age.
+
+   #+begin_src emacs-lisp :noweb yes
+(use-package chezmoi
+  :config
+  (setopt chezmoi-extensions '(dired ediff)))
+   #+end_src
+
 ** Ediff: Comparing source and target states
 
    Emacs has a lovely package called ~ediff~ for comparing differences between files which is perfect for when the source and target states get out of sync. Quickly resolve inconsistencies between source and target states using ~chezmoi-ediff~. Or view the raw diff using ~chezmoi-diff~ if you prefer. Pipe this into your own diff workflow using ~(chezmoi-diff 1)~ to give raw diff input to some other diff management tool.
