@@ -61,9 +61,10 @@
 
 (defun chezmoi-template-execute (template)
   "Convert a TEMPLATE string using chezmoi'."
-  (thread-first "%s execute-template %s"
-                (format chezmoi-command (shell-quote-argument template))
-                shell-command-to-string))
+  (chezmoi--command-result-output
+   (chezmoi--run-command
+    (chezmoi--command-line
+     (format "execute-template %s" (shell-quote-argument template))))))
 
 (defun chezmoi-template--put-display-value (start end value &optional object)
   "Display the VALUE from START to END in string or buffer OBJECT."
