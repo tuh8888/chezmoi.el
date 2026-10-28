@@ -37,7 +37,9 @@
   "Add files marked in Dired to source state."
   (interactive)
   (dolist (file (dired-get-marked-files))
-    (shell-command (concat chezmoi-command " add " (shell-quote-argument file)))))
+    (chezmoi--run-command
+     (chezmoi--command-line
+      (concat "add " (shell-quote-argument file))))))
 
 (provide 'chezmoi-dired)
 ;;; chezmoi-dired.el ends here

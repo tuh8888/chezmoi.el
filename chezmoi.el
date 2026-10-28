@@ -52,12 +52,16 @@
   (let ((b (get-buffer-create "*chezmoi*")))
     (with-current-buffer b
       (erase-buffer)
-      (chezmoi--locally
-       (shell-command (format "%s %s" chezmoi-command args) b))
-      (let ((s (buffer-string)))
-	(let ((result (split-string (string-trim s) "\n")))
-	  (unless (cl-some (lambda (l) (string-match-p chezmoi-command-error-regex l)) result)
-	    result))))))
+      (let ((output
+             (chezmoi--locally
+              (chezmoi--command-result-output
+               (chezmoi--run-command (chezmoi--command-line args))))))
+        (insert output)
+        (let ((result (split-string (string-trim output) "\n")))
+          (unless (cl-some (lambda (line)
+                             (string-match-p chezmoi-command-error-regex line))
+                           result)
+            result))))))
 
 (defun chezmoi-managed ()
   "List all files and directories managed by chezmoi."
@@ -83,7 +87,10 @@ If ARG is non-nil, switch to the diff-buffer."
   (let ((b (get-buffer-create "*chezmoi-diff*")))
     (with-current-buffer b
       (erase-buffer)
-      (chezmoi--locally (shell-command (concat chezmoi-command " diff --use-builtin-diff") b)))
+      (insert
+       (chezmoi--locally
+        (chezmoi--command-result-output
+         (chezmoi--run-command (chezmoi--command-line "diff --use-builtin-diff"))))))
     (unless arg
       (switch-to-buffer b)
       (diff-mode)
@@ -94,8 +101,9 @@ If ARG is non-nil, switch to the diff-buffer."
   "Use chezmoi status to return the files that have changed."
   (let ((lines (split-string
 		(chezmoi--locally
-		 (shell-command-to-string (concat chezmoi-command " status")))
-		"\n" t)))
+		 (chezmoi--command-result-output
+		  (chezmoi--run-command (chezmoi--command-line "status"))))
+		"\r?\n" t)))
     (cl-loop for line in lines
 	     when (string-match "^[ ADMR][ADMR] \\(.+\\)$" line)
 	     collect (concat "~/" (match-string 1 line)))))
@@ -141,7 +149,7 @@ If ARG is non-nil, switch to the diff-buffer."
 			       :initial-value base-name))
 	 (dir (file-name-directory source-file))
 	 (dir (when dir (cl-reduce (lambda (s attr) (let ((replacement (if (string= "dot_" attr) "." "")))
-						 (replace-regexp-in-string attr replacement s)))
+						      (replace-regexp-in-string attr replacement s)))
 				   chezmoi-source-state-prefix-attrs
 				   :initial-value dir)))
 	 (stop-parsing nil)
