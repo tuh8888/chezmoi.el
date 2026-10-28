@@ -99,15 +99,19 @@ VALUE is ignored."
 F is called with the start of the match, the end of the match,
 the template value and BUFFER-OR-NAME."
   (with-current-buffer buffer-or-name
-    (let ((match -1)
-          ;; TODO Check if I need to account for the text properties updating this.
-          (string (buffer-substring-no-properties (point-min) (point-max))))
-      (while (setq match (string-match chezmoi-template-regex string (1+ match)))
-        (let* ((start (match-beginning 0))
-               (end (match-end 0))
-               (template (substring string start end))
-               (value (chezmoi-template-execute template)))
-          (funcall f (1+ start) (1+ end) value buffer-or-name))))))
+    ;; Widen so match offsets line up with buffer positions even when
+    ;; the buffer is narrowed (e.g. by `replace-buffer-contents' callers).
+    (save-restriction
+      (widen)
+      (let ((match -1)
+            ;; TODO Check if I need to account for the text properties updating this.
+            (string (buffer-substring-no-properties (point-min) (point-max))))
+        (while (setq match (string-match chezmoi-template-regex string (1+ match)))
+          (let* ((start (match-beginning 0))
+                 (end (match-end 0))
+                 (template (substring string start end))
+                 (value (chezmoi-template-execute template)))
+            (funcall f (+ (point-min) start) (+ (point-min) end) value buffer-or-name)))))))
 
 (defun chezmoi-template--funcall-over-display-properties (f start buffer-or-name)
   "Call F on each occurrence with display property in BUFFER-OR-NAME.
@@ -115,15 +119,19 @@ F is called with the start of the occurrence, the end of the occurrence,
 the display property value, and BUFFER-OR-NAME.
 When START is non-nil, find only the region around START."
   (with-current-buffer buffer-or-name
-    (let ((end (or start 1))
-          (buf (current-buffer)))
-      (if start
-          (let ((start (previous-single-property-change end 'chezmoi buf))
-                (end (next-single-property-change start 'chezmoi buf)))
-            (funcall f start end buffer-or-name))
-        (while (and (setq start (next-single-property-change end 'chezmoi buf))
-                    (setq end (next-single-property-change start 'chezmoi buf)))
-          (funcall f start end buffer-or-name))))))
+    ;; Widen so positions are valid even when the buffer is narrowed
+    ;; (e.g. by `org-edit-src-exit' or `eglot-rename').
+    (save-restriction
+      (widen)
+      (let ((end (or start (point-min)))
+            (buf (current-buffer)))
+        (if start
+            (let ((start (previous-single-property-change end 'chezmoi buf))
+                  (end (next-single-property-change start 'chezmoi buf)))
+              (funcall f start end buffer-or-name))
+          (while (and (setq start (next-single-property-change end 'chezmoi buf))
+                      (setq end (next-single-property-change start 'chezmoi buf)))
+            (funcall f start end buffer-or-name)))))))
 
 (defun chezmoi-template-buffer-display (&optional display-p start buffer-or-name)
   "Display templates found in BUFFER-OR-NAME.
