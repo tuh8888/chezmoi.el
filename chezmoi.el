@@ -83,7 +83,7 @@ If ARG is non-nil, switch to the diff-buffer."
   (let ((b (get-buffer-create "*chezmoi-diff*")))
     (with-current-buffer b
       (erase-buffer)
-      (chezmoi--locally (shell-command (concat chezmoi-command " diff") b)))
+      (chezmoi--locally (shell-command (concat chezmoi-command " diff --use-builtin-diff") b)))
     (unless arg
       (switch-to-buffer b)
       (diff-mode)
@@ -91,16 +91,14 @@ If ARG is non-nil, switch to the diff-buffer."
     b))
 
 (defun chezmoi-changed-files ()
-  "Use chezmoi diff to return the files that have changed."
-  (with-current-buffer (chezmoi-diff t)
-    (goto-char (point-max))
-    (let (files line-beg)
-      (while (setq line-beg (re-search-backward "^\\+\\{3\\} .*" nil t))
-	(let ((file-name (thread-first line-beg
-				       (buffer-substring-no-properties (line-end-position))
-				       (substring 5))))
-	  (push (concat "~" file-name) files)))
-      files)))
+  "Use chezmoi status to return the files that have changed."
+  (let ((lines (split-string
+		(chezmoi--locally
+		 (shell-command-to-string (concat chezmoi-command " status")))
+		"\n" t)))
+    (cl-loop for line in lines
+	     when (string-match "^[ ADMR][ADMR] \\(.+\\)$" line)
+	     collect (concat "~/" (match-string 1 line)))))
 
 (defun chezmoi-changed-p (file)
   "Return non-nil of FILE has changed."
