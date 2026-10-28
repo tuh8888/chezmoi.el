@@ -1,9 +1,9 @@
 ;;; chezmoi-core.el --- A package for interacting with chezmoi -*- lexical-binding: t -*-
 
 ;; Author: Harrison Pielke-Lombardo
+;; Assisted-by: Claude Code
 ;; Maintainer: Harrison Pielke-Lombardo
 ;; Version: 1.1.0
-;; Package-Requires: ((emacs "26.1"))
 ;; Homepage: http://www.github.com/tuh8888/chezmoi.el
 ;; Keywords: vc
 
