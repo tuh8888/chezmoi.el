@@ -61,7 +61,7 @@
 
 (defun chezmoi--command-line (args)
   "Build a noninteractive chezmoi command line with shell string ARGS."
-  (format "%s %s" chezmoi-command args))
+  (format "%s --color=false %s" chezmoi-command args))
 
 (defun chezmoi--run-command-direct (command)
   "Run shell COMMAND without a PTY and return its status and output."

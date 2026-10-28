@@ -164,6 +164,21 @@
       (chezmoi-process-test--cleanup)
       (delete-file script))))
 
+;; Readline treats TAB as completion, so template text must not be
+;; sent through the terminal.
+(ert-deftest chezmoi-template-execute-preserves-template-text ()
+  "Templates containing tabs and long lines render unchanged."
+  (let ((script (make-temp-file "chezmoi-template-cat-"))
+        (template (concat "a\tb\tc\n" (make-string 6000 ?x) "\n")))
+    (unwind-protect
+        (progn
+          (write-region "#!/bin/sh\ncat\n" nil script nil 'silent)
+          (set-file-modes script #o700)
+          (let ((chezmoi-command script))
+            (should (equal template (chezmoi-template-execute template)))))
+      (chezmoi-process-test--cleanup)
+      (delete-file script))))
+
 (ert-deftest chezmoi-dispatch-explicitly-disables-color ()
   "General chezmoi dispatches request output without ANSI color codes."
   (let ((script (make-temp-file "chezmoi-dispatch-color-")))
