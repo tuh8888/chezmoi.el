@@ -42,22 +42,21 @@
 (require 'shell)
 (require 'subr-x)
 
-(defmacro chezmoi--locally (&rest body)
-  "Ensure BODY is run with a local `default-directory'."
-  `(let ((default-directory (if (file-remote-p default-directory) (expand-file-name "~") default-directory)))
-     ,@body))
-
 (defun chezmoi--dispatch (args)
   "Dispatch chezmoi command to shell, passing ARGS."
   (let ((b (get-buffer-create "*chezmoi*")))
     (with-current-buffer b
       (erase-buffer)
-      (chezmoi--locally
-       (shell-command (format "%s %s" chezmoi-command args) b))
-      (let ((s (buffer-string)))
-	(let ((result (split-string (string-trim s) "\n")))
-	  (unless (cl-some (lambda (l) (string-match-p chezmoi-command-error-regex l)) result)
-	    result))))))
+      (let ((output
+             (chezmoi--locally
+              (chezmoi--command-result-output
+               (chezmoi--run-command (chezmoi--command-line args))))))
+        (insert output)
+        (let ((result (split-string (string-trim output) "\n")))
+          (unless (cl-some (lambda (line)
+                             (string-match-p chezmoi-command-error-regex line))
+                           result)
+            result))))))
 
 (defun chezmoi-managed ()
   "List all files and directories managed by chezmoi."
@@ -83,7 +82,10 @@ If ARG is non-nil, switch to the diff-buffer."
   (let ((b (get-buffer-create "*chezmoi-diff*")))
     (with-current-buffer b
       (erase-buffer)
-      (chezmoi--locally (shell-command (concat chezmoi-command " diff") b)))
+      (insert
+       (chezmoi--locally
+        (chezmoi--command-result-output
+         (chezmoi--run-command (chezmoi--command-line "diff --use-builtin-diff"))))))
     (unless arg
       (switch-to-buffer b)
       (diff-mode)
@@ -91,16 +93,15 @@ If ARG is non-nil, switch to the diff-buffer."
     b))
 
 (defun chezmoi-changed-files ()
-  "Use chezmoi diff to return the files that have changed."
-  (with-current-buffer (chezmoi-diff t)
-    (goto-char (point-max))
-    (let (files line-beg)
-      (while (setq line-beg (re-search-backward "^\\+\\{3\\} .*" nil t))
-	(let ((file-name (thread-first line-beg
-				       (buffer-substring-no-properties (line-end-position))
-				       (substring 5))))
-	  (push (concat "~" file-name) files)))
-      files)))
+  "Use chezmoi status to return the files that have changed."
+  (let ((lines (split-string
+		(chezmoi--locally
+		 (chezmoi--command-result-output
+		  (chezmoi--run-command (chezmoi--command-line "status"))))
+		"\r?\n" t)))
+    (cl-loop for line in lines
+	     when (string-match "^[ ADMR][ADMR] \\(.+\\)$" line)
+	     collect (concat "~/" (match-string 1 line)))))
 
 (defun chezmoi-changed-p (file)
   "Return non-nil of FILE has changed."
@@ -323,6 +324,12 @@ Prefix ARG is passed to `chezmoi-write'."
   "Keywords for font lock."
   `((,chezmoi-template-regex 0 'chezmoi-template-face prepend)))
 
+(defun chezmoi--template-file-p (file)
+  "Return non-nil if source FILE is interpreted by chezmoi as a template."
+  (and file
+       (or (string-suffix-p ".tmpl" file)
+           (string-match-p "/\\.chezmoitemplates/" file))))
+
 (define-minor-mode chezmoi-mode
   "Chezmoi mode for source files."
   :group 'chezmoi
@@ -330,10 +337,11 @@ Prefix ARG is passed to `chezmoi-write'."
       (progn
 	(unless (chezmoi-changed-p (buffer-file-name))
 	  (add-hook 'after-save-hook #'chezmoi-write 0 t))
-	(add-hook 'after-change-functions #'chezmoi-template--after-change nil 1)
+	(when (chezmoi--template-file-p (buffer-file-name))
+	  (add-hook 'after-change-functions #'chezmoi-template--after-change nil 1)
+	  (chezmoi-template-buffer-display t))
 
 	(font-lock-add-keywords nil (chezmoi-font-lock-keywords) 'append)
-	(chezmoi-template-buffer-display t)
 	(font-lock-ensure (point-min) (point-max)))
     (progn
       (chezmoi-template-buffer-display nil)

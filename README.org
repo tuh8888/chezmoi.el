@@ -83,7 +83,7 @@ The recording above demonstrates editing a chezmoi template with source file on 
 
 ** Dired
 
-   In a Dired buffer, add files to chezmoi by either moving to the file or marking some and calling ~chezmoi-dired-add-marked-files~.
+   In a Dired buffer, add files to chezmoi by either moving to the file or marking some and calling ~chezmoi-dired-add-marked-files~. Remove them from chezmoi the same way with ~chezmoi-dired-forget-marked-files~.
 
 ** Magit
 
@@ -94,6 +94,17 @@ The recording above demonstrates editing a chezmoi template with source file on 
 
 
 * Configuration
+
+** Command sessions
+
+By default, noninteractive chezmoi commands run as independent subprocesses without a PTY. The optional ~chezmoi-process~ extension provides a persistent PTY-backed Bash for terminal-scoped authentication, such as the 1Password CLI desktop integration:
+
+   #+begin_src emacs-lisp
+(require 'chezmoi-process)
+(chezmoi-process-mode 1)
+   #+end_src
+
+The process starts on demand and is replaced automatically if it exits. Customize ~chezmoi-process-shell-command~ to select a different Bash executable.
 
 ** Evil
 
