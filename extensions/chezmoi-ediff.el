@@ -33,6 +33,13 @@
 (require 'chezmoi)
 (require 'ediff)
 
+;; Defined in age.el, which is optional.  Declaring them special ensures
+;; the `let' binding in `chezmoi-ediff' is dynamic even when this file is
+;; byte-compiled without age.el loaded.
+(defvar age-always-use-default-keys)
+(defvar age-default-identity)
+(defvar age-default-recipient)
+
 (defcustom chezmoi-ediff-force-overwrite t
   "Whether to force file overwrite when ediff finishes with identical buffers."
   :type '(boolean)
@@ -63,7 +70,8 @@ N, BUF-TYPE, CTRL-BUF, START, and END are all passed to `ediff'."
 		   (with-current-buffer ediff-buffer-B (buffer-string)))
 	(chezmoi-write source-file t)))))
 
-(defvar chezmoi-ediff--ediff-quit-hook ()
+(defun chezmoi-ediff--ediff-quit-hook ()
+  "Remove the `ediff-get-region-contents' override when ediff quits."
   (advice-remove 'ediff-get-region-contents #'chezmoi-ediff--ediff-get-region-contents))
 
 (defun chezmoi-ediff (file)
