@@ -11,14 +11,17 @@
 (ert-deftest chezmoi-core-uses-direct-command-runner-by-default ()
   "Core commands use the non-PTY runner unless an extension opts in."
   (should (boundp 'chezmoi-command-runner))
-  (should (eq #'chezmoi--run-command-direct chezmoi-command-runner))
-  (should-not (featurep 'chezmoi-process)))
+  ;; Check the standard value rather than the current one, since other
+  ;; test files loaded into the same Emacs may enable an extension runner.
+  (should (eq #'chezmoi--run-command-direct
+              (eval (car (get 'chezmoi-command-runner 'standard-value)) t))))
 
 (ert-deftest chezmoi-core-direct-runner-captures-status-and-output ()
   "The default runner captures combined command output and exit status."
-  (let ((result
-         (chezmoi--run-command
-          "printf direct-output; printf direct-error >&2; exit 7")))
+  (let* ((chezmoi-command-runner #'chezmoi--run-command-direct)
+         (result
+          (chezmoi--run-command
+           "printf direct-output; printf direct-error >&2; exit 7")))
     (should (equal 7 (chezmoi--command-result-status result)))
     (should (equal "direct-outputdirect-error"
                    (chezmoi--command-result-output result)))))
