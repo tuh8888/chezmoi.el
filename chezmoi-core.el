@@ -36,6 +36,8 @@
 
 ;;; Code:
 
+(require 'cl-lib)
+
 (defgroup chezmoi nil
   "Customization group for `chezmoi-mode'."
   :group 'chezmoi)
@@ -47,6 +49,32 @@
 
 (defvar chezmoi-command-error-regex "chezmoi:"
   "Regex for detecting if chezmoi has encountered an error.")
+
+(cl-defstruct chezmoi--command-result
+  status
+  output)
+
+(defun chezmoi--command-line (args)
+  "Build a noninteractive chezmoi command line with shell string ARGS."
+  (format "%s %s" chezmoi-command args))
+
+(defun chezmoi--run-command-direct (command)
+  "Run shell COMMAND without a PTY and return its status and output."
+  (with-temp-buffer
+    (let* ((status (call-process shell-file-name nil (list t t) nil
+                                 shell-command-switch command)))
+      (make-chezmoi--command-result
+       :status status
+       :output (buffer-substring-no-properties (point-min) (point-max))))))
+
+(defcustom chezmoi-command-runner #'chezmoi--run-command-direct
+  "Function used to run noninteractive chezmoi command strings."
+  :type 'function
+  :group 'chezmoi)
+
+(defun chezmoi--run-command (command)
+  "Run shell COMMAND using `chezmoi-command-runner'."
+  (funcall chezmoi-command-runner command))
 
 (defvar chezmoi-source-state-prefix-attrs
   '("after_"
