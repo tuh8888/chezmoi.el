@@ -33,6 +33,13 @@
 (require 'chezmoi)
 (require 'ediff)
 
+;; Defined in age.el, which is optional.  Declaring them special ensures
+;; the `let' binding in `chezmoi-ediff' is dynamic even when this file is
+;; byte-compiled without age.el loaded.
+(defvar age-always-use-default-keys)
+(defvar age-default-identity)
+(defvar age-default-recipient)
+
 (defcustom chezmoi-ediff-force-overwrite t
   "Whether to force file overwrite when ediff finishes with identical buffers."
   :type '(boolean)
