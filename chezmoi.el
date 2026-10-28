@@ -150,7 +150,7 @@ If ARG is non-nil, switch to the diff-buffer."
 			       :initial-value base-name))
 	 (dir (file-name-directory source-file))
 	 (dir (when dir (cl-reduce (lambda (s attr) (let ((replacement (if (string= "dot_" attr) "." "")))
-						      (replace-regexp-in-string attr replacement s)))
+						 (replace-regexp-in-string attr replacement s)))
 				   chezmoi-source-state-prefix-attrs
 				   :initial-value dir)))
 	 (stop-parsing nil)
