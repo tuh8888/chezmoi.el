@@ -70,7 +70,8 @@ N, BUF-TYPE, CTRL-BUF, START, and END are all passed to `ediff'."
 		   (with-current-buffer ediff-buffer-B (buffer-string)))
 	(chezmoi-write source-file t)))))
 
-(defvar chezmoi-ediff--ediff-quit-hook ()
+(defun chezmoi-ediff--ediff-quit-hook ()
+  "Remove the `ediff-get-region-contents' override when ediff quits."
   (advice-remove 'ediff-get-region-contents #'chezmoi-ediff--ediff-get-region-contents))
 
 (defun chezmoi-ediff (file)
