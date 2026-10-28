@@ -9,7 +9,6 @@
 (require 'chezmoi-process nil t)
 (require 'chezmoi-template)
 (require 'chezmoi-dired)
-(provide 'magit)
 (require 'chezmoi)
 
 (when (fboundp 'chezmoi-process-mode)
