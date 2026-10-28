@@ -37,8 +37,34 @@
 (defun chezmoi-dired-add-marked-files ()
   "Add files marked in Dired to source state."
   (interactive)
-  (dolist (file (dired-get-marked-files))
-    (shell-command (concat chezmoi-command " add " (shell-quote-argument file)))))
+  (let ((failures nil))
+    (dolist (file (dired-get-marked-files))
+      (let ((result (chezmoi--run-command
+                     (chezmoi--command-line
+                      (concat "add " (shell-quote-argument file))))))
+        (unless (eql 0 (chezmoi--command-result-status result))
+          (push (cons file (string-trim
+                            (chezmoi--command-result-output result)))
+                failures))))
+    (when failures
+      (let ((b (get-buffer-create "*chezmoi-dired-add*")))
+        (with-current-buffer b
+          (erase-buffer)
+          (dolist (failure (nreverse failures))
+            (insert (format "%s:\n%s\n" (car failure) (cdr failure)))))
+        (display-buffer b)
+        (message "chezmoi add failed for %d file(s); see %s"
+                 (length failures) (buffer-name b))))))
+
+;;;###autoload
+(defun chezmoi-dired-forget-marked-files ()
+  "Remove files marked in Dired from source state."
+  (interactive)
+  (let ((files (dired-get-marked-files)))
+    (when (dired-mark-pop-up nil 'forget files #'yes-or-no-p
+                             (format "Forget %d file(s) from source state? " (length files)))
+      (dolist (file files)
+        (shell-command (concat chezmoi-command " forget --force " (shell-quote-argument file)))))))
 
 (provide 'chezmoi-dired)
 ;;; chezmoi-dired.el ends here

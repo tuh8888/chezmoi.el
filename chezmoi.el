@@ -45,23 +45,23 @@
 ;; Let these commands work for a plain `require' without generated autoloads.
 (autoload 'chezmoi-ediff "chezmoi-ediff" nil t)
 (autoload 'chezmoi-dired-add-marked-files "chezmoi-dired" nil t)
-
-(defmacro chezmoi--locally (&rest body)
-  "Ensure BODY is run with a local `default-directory'."
-  `(let ((default-directory (if (file-remote-p default-directory) (expand-file-name "~") default-directory)))
-     ,@body))
+(autoload 'chezmoi-dired-forget-marked-files "chezmoi-dired" nil t)
 
 (defun chezmoi--dispatch (args)
   "Dispatch chezmoi command to shell, passing ARGS."
   (let ((b (get-buffer-create "*chezmoi*")))
     (with-current-buffer b
       (erase-buffer)
-      (chezmoi--locally
-       (shell-command (format "%s %s" chezmoi-command args) b))
-      (let ((s (buffer-string)))
-	(let ((result (split-string (string-trim s) "\n")))
-	  (unless (cl-some (lambda (l) (string-match-p chezmoi-command-error-regex l)) result)
-	    result))))))
+      (let ((output
+             (chezmoi--locally
+              (chezmoi--command-result-output
+               (chezmoi--run-command (chezmoi--command-line args))))))
+        (insert output)
+        (let ((result (split-string (string-trim output) "\n")))
+          (unless (cl-some (lambda (line)
+                             (string-match-p chezmoi-command-error-regex line))
+                           result)
+            result))))))
 
 (defun chezmoi-managed ()
   "List all files and directories managed by chezmoi."
@@ -88,7 +88,10 @@ If ARG is non-nil, switch to the diff-buffer."
   (let ((b (get-buffer-create "*chezmoi-diff*")))
     (with-current-buffer b
       (erase-buffer)
-      (chezmoi--locally (shell-command (concat chezmoi-command " diff") b)))
+      (insert
+       (chezmoi--locally
+        (chezmoi--command-result-output
+         (chezmoi--run-command (chezmoi--command-line "diff --use-builtin-diff"))))))
     (unless arg
       (switch-to-buffer b)
       (diff-mode)
@@ -96,16 +99,15 @@ If ARG is non-nil, switch to the diff-buffer."
     b))
 
 (defun chezmoi-changed-files ()
-  "Use chezmoi diff to return the files that have changed."
-  (with-current-buffer (chezmoi-diff t)
-    (goto-char (point-max))
-    (let (files line-beg)
-      (while (setq line-beg (re-search-backward "^\\+\\{3\\} .*" nil t))
-	(let ((file-name (thread-first line-beg
-				       (buffer-substring-no-properties (line-end-position))
-				       (substring 5))))
-	  (push (concat "~" file-name) files)))
-      files)))
+  "Use chezmoi status to return the files that have changed."
+  (let ((lines (split-string
+		(chezmoi--locally
+		 (chezmoi--command-result-output
+		  (chezmoi--run-command (chezmoi--command-line "status"))))
+		"\r?\n" t)))
+    (cl-loop for line in lines
+	     when (string-match "^[ ADMR][ADMR] \\(.+\\)$" line)
+	     collect (concat "~/" (match-string 1 line)))))
 
 (defun chezmoi-changed-p (file)
   "Return non-nil of FILE has changed."
@@ -245,6 +247,26 @@ With prefix ARG, save the source buffer."
                      target-file)
             nil))))))
 
+(defun chezmoi-add (files)
+  "Add FILES to the chezmoi source state.
+FILES can be a single file name or a list of file names.  When called
+interactively, prompt for a file, defaulting to the current buffer's file.
+Return the list of added files, or nil if =chezmoi add= failed."
+  (interactive
+   (list (read-file-name "Add file to chezmoi: " nil (buffer-file-name) t
+			 (when (buffer-file-name)
+			   (file-name-nondirectory (buffer-file-name))))))
+  (let* ((files (cl-mapcar #'expand-file-name (if (listp files) files (list files))))
+	 (cmd (concat "add " (mapconcat #'shell-quote-argument files " "))))
+    (if (chezmoi--dispatch cmd)
+	(progn
+	  (message "Added to chezmoi: %s" (string-join files ", "))
+	  files)
+      (progn
+	(message "Failed to add %s. See the *chezmoi* buffer for details."
+		 (string-join files ", "))
+	nil))))
+
 (defun chezmoi--completing-read (prompt choices category)
   "Completing read with meta data.
 PROMPT, CHOICES, and CATEGORY are passed to `complete-with-action'."
@@ -347,6 +369,12 @@ completion UI, Corfu, and Company (through `company-capf')."
   "Keywords for font lock."
   `((,chezmoi-template-regex 0 'chezmoi-template-face prepend)))
 
+(defun chezmoi--template-file-p (file)
+  "Return non-nil if source FILE is interpreted by chezmoi as a template."
+  (and file
+       (or (string-suffix-p ".tmpl" file)
+           (string-match-p "/\\.chezmoitemplates/" file))))
+
 ;;;###autoload
 (define-minor-mode chezmoi-mode
   "Chezmoi mode for source files."
@@ -355,11 +383,12 @@ completion UI, Corfu, and Company (through `company-capf')."
       (progn
 	(unless (chezmoi-changed-p (buffer-file-name))
 	  (add-hook 'after-save-hook #'chezmoi-write 0 t))
-	(add-hook 'after-change-functions #'chezmoi-template--after-change nil 1)
-	(add-hook 'completion-at-point-functions #'chezmoi-capf nil t)
+	(when (chezmoi--template-file-p (buffer-file-name))
+	  (add-hook 'after-change-functions #'chezmoi-template--after-change nil 1)
+	  (add-hook 'completion-at-point-functions #'chezmoi-capf nil t)
+	  (chezmoi-template-buffer-display t))
 
 	(font-lock-add-keywords nil (chezmoi-font-lock-keywords) 'append)
-	(chezmoi-template-buffer-display t)
 	(font-lock-ensure (point-min) (point-max)))
     (progn
       (chezmoi-template-buffer-display nil)

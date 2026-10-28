@@ -65,7 +65,7 @@ N, BUF-TYPE, CTRL-BUF, START, and END are all passed to `ediff'."
 	(chezmoi-write source-file t)))))
 
 (defun chezmoi-ediff--ediff-quit-hook ()
-  "Remove the template-aware advice once ediff quits."
+  "Remove the `ediff-get-region-contents' override when ediff quits."
   (advice-remove 'ediff-get-region-contents #'chezmoi-ediff--ediff-get-region-contents))
 
 ;;;###autoload
