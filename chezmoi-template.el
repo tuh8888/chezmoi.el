@@ -1,6 +1,7 @@
 ;;; chezmoi-template.el --- Display chezmoi templates -*- lexical-binding: t -*-
 
 ;; Author: Harrison Pielke-Lombardo
+;; Assisted-by: Claude Code
 ;; Maintainer: Harrison Pielke-Lombardo
 ;; Version: 1.1.0
 ;; Package-Requires: ((emacs "26.1"))

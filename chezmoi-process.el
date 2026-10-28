@@ -1,5 +1,8 @@
 ;;; chezmoi-process.el --- Persistent command process for chezmoi -*- lexical-binding: t -*-
 
+;; Author: Harrison Pielke-Lombardo
+;; Assisted-by: Claude Code
+
 ;; This file is not part of GNU Emacs.
 
 ;;; Commentary:
