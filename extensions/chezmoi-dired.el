@@ -2,7 +2,7 @@
 
 ;; Author: Harrison Pielke-Lombardo
 ;; Maintainer: Harrison Pielke-Lombardo
-;; Version: 1.1.0
+;; Version: 1.1.1
 ;; Package-Requires: ((emacs "26.1") (chezmoi "1.1.0"))
 ;; Homepage: http://www.github.com/tuh8888/chezmoi.el
 ;; Keywords: vc
@@ -54,6 +54,15 @@
         (display-buffer b)
         (message "chezmoi add failed for %d file(s); see %s"
                  (length failures) (buffer-name b))))))
+
+(defun chezmoi-dired-forget-marked-files ()
+  "Remove files marked in Dired from source state."
+  (interactive)
+  (let ((files (dired-get-marked-files)))
+    (when (dired-mark-pop-up nil 'forget files #'yes-or-no-p
+                             (format "Forget %d file(s) from source state? " (length files)))
+      (dolist (file files)
+        (shell-command (concat chezmoi-command " forget --force " (shell-quote-argument file)))))))
 
 (provide 'chezmoi-dired)
 ;;; chezmoi-dired.el ends here

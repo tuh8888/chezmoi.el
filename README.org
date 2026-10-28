@@ -81,7 +81,7 @@ The recording above demonstrates editing a chezmoi template with source file on 
 
 ** Dired
 
-   In a Dired buffer, add files to chezmoi by either moving to the file or marking some and calling ~chezmoi-dired-add-marked-files~.
+   In a Dired buffer, add files to chezmoi by either moving to the file or marking some and calling ~chezmoi-dired-add-marked-files~. Remove them from chezmoi the same way with ~chezmoi-dired-forget-marked-files~.
 
 ** Magit
 
