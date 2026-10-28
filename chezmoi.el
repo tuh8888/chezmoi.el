@@ -310,6 +310,12 @@ Prefix ARG is passed to `chezmoi-write'."
   "Keywords for font lock."
   `((,chezmoi-template-regex 0 'chezmoi-template-face prepend)))
 
+(defun chezmoi--template-file-p (file)
+  "Return non-nil if source FILE is interpreted by chezmoi as a template."
+  (and file
+       (or (string-suffix-p ".tmpl" file)
+           (string-match-p "/\\.chezmoitemplates/" file))))
+
 (define-minor-mode chezmoi-mode
   "Chezmoi mode for source files."
   :group 'chezmoi
@@ -317,10 +323,11 @@ Prefix ARG is passed to `chezmoi-write'."
       (progn
 	(unless (chezmoi-changed-p (buffer-file-name))
 	  (add-hook 'after-save-hook #'chezmoi-write 0 t))
-	(add-hook 'after-change-functions #'chezmoi-template--after-change nil 1)
+	(when (chezmoi--template-file-p (buffer-file-name))
+	  (add-hook 'after-change-functions #'chezmoi-template--after-change nil 1)
+	  (chezmoi-template-buffer-display t))
 
 	(font-lock-add-keywords nil (chezmoi-font-lock-keywords) 'append)
-	(chezmoi-template-buffer-display t)
 	(font-lock-ensure (point-min) (point-max)))
     (progn
       (chezmoi-template-buffer-display nil)
