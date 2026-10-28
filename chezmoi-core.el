@@ -54,6 +54,11 @@
   status
   output)
 
+(defmacro chezmoi--locally (&rest body)
+  "Ensure BODY is run with a local `default-directory'."
+  `(let ((default-directory (if (file-remote-p default-directory) (expand-file-name "~") default-directory)))
+     ,@body))
+
 (defun chezmoi--command-line (args)
   "Build a noninteractive chezmoi command line with shell string ARGS."
   (format "%s %s" chezmoi-command args))

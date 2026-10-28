@@ -61,10 +61,11 @@
 
 (defun chezmoi-template-execute (template)
   "Convert a TEMPLATE string using chezmoi'."
-  (chezmoi--command-result-output
-   (chezmoi--run-command
-    (chezmoi--command-line
-     (format "execute-template %s" (shell-quote-argument template))))))
+  (chezmoi--locally
+   (chezmoi--command-result-output
+    (chezmoi--run-command
+     (chezmoi--command-line
+      (format "execute-template %s" (shell-quote-argument template)))))))
 
 (defun chezmoi-template--put-display-value (start end value &optional object)
   "Display the VALUE from START to END in string or buffer OBJECT."
