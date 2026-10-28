@@ -31,6 +31,8 @@ The recording above demonstrates editing a chezmoi template with source file on 
 
   Quickly jump to the corresponding target file or source file using ~chezmoi-open-other~.
 
+  Start managing a new file with ~chezmoi-add~. Interactively it prompts for a file, defaulting to the current buffer's file. From Lisp it also accepts a list of files, e.g. =(chezmoi-add '("~/.bashrc" "~/.gitconfig"))=.
+
 * Functions
 
   Some functions provided are direct equivalents to common emacs functions.

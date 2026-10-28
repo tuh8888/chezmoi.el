@@ -239,6 +239,26 @@ With prefix ARG, save the source buffer."
                      target-file)
             nil))))))
 
+(defun chezmoi-add (files)
+  "Add FILES to the chezmoi source state.
+FILES can be a single file name or a list of file names.  When called
+interactively, prompt for a file, defaulting to the current buffer's file.
+Return the list of added files, or nil if =chezmoi add= failed."
+  (interactive
+   (list (read-file-name "Add file to chezmoi: " nil (buffer-file-name) t
+			 (when (buffer-file-name)
+			   (file-name-nondirectory (buffer-file-name))))))
+  (let* ((files (cl-mapcar #'expand-file-name (if (listp files) files (list files))))
+	 (cmd (concat "add " (mapconcat #'shell-quote-argument files " "))))
+    (if (chezmoi--dispatch cmd)
+	(progn
+	  (message "Added to chezmoi: %s" (string-join files ", "))
+	  files)
+      (progn
+	(message "Failed to add %s. See the *chezmoi* buffer for details."
+		 (string-join files ", "))
+	nil))))
+
 (defun chezmoi--completing-read (prompt choices category)
   "Completing read with meta data.
 PROMPT, CHOICES, and CATEGORY are passed to `complete-with-action'."
