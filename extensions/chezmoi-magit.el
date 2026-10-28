@@ -33,6 +33,7 @@
 (require 'chezmoi)
 (require 'magit)
 
+;;;###autoload
 (defun chezmoi-magit-status ()
   "Show the status of the chezmoi source repository."
   (interactive)

@@ -2,8 +2,8 @@
 
 ;; Author: Harrison Pielke-Lombardo
 ;; Maintainer: Harrison Pielke-Lombardo
-;; Version: 1.1.1
-;; Package-Requires: ((emacs "26.1") (chezmoi "1.1.0"))
+;; Version: 1.2.0
+;; Package-Requires: ((emacs "26.1"))
 ;; Homepage: http://www.github.com/tuh8888/chezmoi.el
 ;; Keywords: vc
 
@@ -33,6 +33,7 @@
 (require 'dired)
 (require 'chezmoi)
 
+;;;###autoload
 (defun chezmoi-dired-add-marked-files ()
   "Add files marked in Dired to source state."
   (interactive)
@@ -55,6 +56,7 @@
         (message "chezmoi add failed for %d file(s); see %s"
                  (length failures) (buffer-name b))))))
 
+;;;###autoload
 (defun chezmoi-dired-forget-marked-files ()
   "Remove files marked in Dired from source state."
   (interactive)

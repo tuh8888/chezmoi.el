@@ -2,8 +2,8 @@
 
 ;; Author: Harrison Pielke-Lombardo
 ;; Maintainer: Harrison Pielke-Lombardo
-;; Version: 1.1.0
-;; Package-Requires: ((emacs "27.1") (cape "0.34") (chezmoi "1.1.0"))
+;; Version: 1.2.0
+;; Package-Requires: ((emacs "26.1") (chezmoi "1.2.0"))
 ;; Homepage: http://www.github.com/tuh8888/chezmoi.el
 ;; Keywords: vc
 
@@ -26,61 +26,15 @@
 
 ;;; Commentary:
 
-;; Provides a `cape' backend for `chezmoi'.
+;; Obsolete.  `chezmoi-capf' now lives in `chezmoi' and needs no Cape.
+;; `chezmoi-mode' adds it to `completion-at-point-functions' for you.
 
 ;;; Code:
 
 (require 'chezmoi)
-(require 'cape)
 
-(defvar chezmoi-cape--properties
-  (list :annotation-function (lambda (_) " Keyword")
-	:company-kind (lambda (_) 'keyword)
-	:exclusive 'no)
-  "Completion extra properties for `chezmoi-cape'.")
-
-(defun chezmoi-cape--next-keys (str)
-  "Return candidates for STR for company completion.
-Candidates are chezmoi data values corresponding to the path at point."
-  (let* ((keys (thread-last chezmoi-template-key-regex
-			    (split-string str)
-			    butlast
-			    (remove "")))
-	 (hashget (lambda (m k) (gethash k m)))
-	 (data (thread-last (chezmoi-get-data)
-			    (cl-reduce hashget keys :initial-value))))
-    (if (hash-table-p data)
-	(hash-table-keys data)
-      (list data))))
-
-(defun chezmoi-cape--bounds ()
-  "TODO."
-  (let* ((bounds (cape--bounds 'word))
-	 (beg (car bounds))
-	 (end (cdr bounds)))
-    (if (string-match "{{" (buffer-substring-no-properties beg end))
-	(let* ((bounds (cape--bounds 'char))
-	       (beg (car bounds))
-	       (end (1- (cdr bounds))))
-	  (cons beg end))
-      bounds)))
-
-(defun chezmoi-capf ()
-  "Complete current template."
-  (when (thing-at-point-looking-at chezmoi-template-regex)
-    (let* ((candidates (thread-last 1
-				    match-string
-				    chezmoi-cape--next-keys
-				    (apply-partially (lambda (c _) c)))))
-      (let* ((bounds (chezmoi-cape--bounds))
-	     (beg (car bounds))
-	     (end (cdr bounds)))
-	(buffer-substring-no-properties beg end)
-	`(,beg ,end
-	       ,(cape--table-with-properties
-		 (cape--cached-table beg end candidates 'prefix)
-		 :category 'cape-keyword)
-	       ,@chezmoi-cape--properties)))))
+(display-warning 'chezmoi
+		 "`chezmoi-cape' is obsolete; `chezmoi-capf' is now part of `chezmoi'.  Remove (require 'chezmoi-cape) from your config.")
 
 (provide 'chezmoi-cape)
 
