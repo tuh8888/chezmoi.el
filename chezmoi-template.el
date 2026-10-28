@@ -63,16 +63,17 @@
   "Convert a TEMPLATE string using chezmoi'.
 TEMPLATE is passed on standard input from a temporary file so that
 command runners which use a terminal never receive its contents."
-  (let ((file (make-temp-file "chezmoi-template-")))
-    (unwind-protect
-        (progn
-          (let ((coding-system-for-write 'utf-8-unix))
-            (write-region template nil file nil 'silent))
-          (chezmoi--command-result-output
-           (chezmoi--run-command
-            (chezmoi--command-line
-             (format "execute-template < %s" (shell-quote-argument file))))))
-      (delete-file file))))
+  (chezmoi--locally
+   (let ((file (make-temp-file "chezmoi-template-")))
+     (unwind-protect
+         (progn
+           (let ((coding-system-for-write 'utf-8-unix))
+             (write-region template nil file nil 'silent))
+           (chezmoi--command-result-output
+            (chezmoi--run-command
+             (chezmoi--command-line
+              (format "execute-template < %s" (shell-quote-argument file))))))
+       (delete-file file)))))
 
 (defun chezmoi-template--put-display-value (start end value &optional object)
   "Display the VALUE from START to END in string or buffer OBJECT."

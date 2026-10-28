@@ -42,11 +42,6 @@
 (require 'shell)
 (require 'subr-x)
 
-(defmacro chezmoi--locally (&rest body)
-  "Ensure BODY is run with a local `default-directory'."
-  `(let ((default-directory (if (file-remote-p default-directory) (expand-file-name "~") default-directory)))
-     ,@body))
-
 (defun chezmoi--dispatch (args)
   "Dispatch chezmoi command to shell, passing ARGS."
   (let ((b (get-buffer-create "*chezmoi*")))
