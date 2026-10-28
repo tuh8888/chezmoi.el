@@ -1,9 +1,9 @@
-;;; chezmoi-ediff.el --- Ediff integration for chezmoi -*- lexical-binding: t -*-
+;;; chezmoi-age.el --- Age encryption integration for chezmoi -*- lexical-binding: t -*-
 
 ;; Author: Harrison Pielke-Lombardo
 ;; Maintainer: Harrison Pielke-Lombardo
-;; Version: 1.0.0
-;; Package-Requires: ((emacs "26.1") (age "0.1.4"))
+;; Version: 1.2.0
+;; Package-Requires: ((emacs "26.1") (age "0.1.4") (chezmoi "1.2.0"))
 ;; Homepage: http://www.github.com/tuh8888/chezmoi.el
 ;; Keywords: vc
 
@@ -29,6 +29,7 @@
 ;; Provides `age' integration for `chezmoi'.
 
 ;;; Code:
+(require 'age)
 (require 'chezmoi)
 
 (defun chezmoi-age-get-recipients ()
@@ -39,9 +40,24 @@
     (append (if (string-empty-p recipient) nil (list recipient)) recipients)))
 
 (defun chezmoi-age-get-identity ()
-  "Get age recipients."
+  "Get age identity."
   (let ((config (chezmoi-get-config)))
     (gethash "identity" (gethash "age" config))))
+
+(defun chezmoi-age--ediff-advice (orig-fn &rest args)
+  "Call ORIG-FN with ARGS, reusing age keys when they match chezmoi's.
+If chezmoi's configured identity and recipients are age's defaults, bind
+`age-always-use-default-keys' so encrypted files open without prompting."
+  (let* ((ident (chezmoi-age-get-identity))
+	 (recips (chezmoi-age-get-recipients))
+	 (age-always-use-default-keys (and (equal ident age-default-identity)
+					   (equal (if (equal 1 (length recips))
+						      (car recips)
+						    recips)
+						  age-default-recipient))))
+    (apply orig-fn args)))
+
+(advice-add 'chezmoi-ediff :around #'chezmoi-age--ediff-advice)
 
 (provide 'chezmoi-age)
 

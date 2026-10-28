@@ -2,7 +2,7 @@
 
 ;; Author: Harrison Pielke-Lombardo
 ;; Maintainer: Harrison Pielke-Lombardo
-;; Version: 1.1.0
+;; Version: 1.2.0
 ;; Package-Requires: ((emacs "26.1"))
 ;; Homepage: http://www.github.com/tuh8888/chezmoi.el
 ;; Keywords: vc
@@ -42,6 +42,10 @@
 (require 'shell)
 (require 'subr-x)
 
+;; Let these commands work for a plain `require' without generated autoloads.
+(autoload 'chezmoi-ediff "chezmoi-ediff" nil t)
+(autoload 'chezmoi-dired-add-marked-files "chezmoi-dired" nil t)
+
 (defmacro chezmoi--locally (&rest body)
   "Ensure BODY is run with a local `default-directory'."
   `(let ((default-directory (if (file-remote-p default-directory) (expand-file-name "~") default-directory)))
@@ -76,6 +80,7 @@
 	       (cl-mapcar #'expand-file-name)
 	       (member (expand-file-name file))))
 
+;;;###autoload
 (defun chezmoi-diff (arg)
   "View output of =chezmoi diff= in a diff-buffer.
 If ARG is non-nil, switch to the diff-buffer."
@@ -200,6 +205,7 @@ If ARG is non-nil, switch to the diff-buffer."
 		 chezmoi--dispatch
 		 cl-first)))
 
+;;;###autoload
 (defun chezmoi-write (&optional file arg)
   "Sync FILE.  How it syncs depends if FILE is in source or target.
 If FILE is in source state, run =chezmoi apply= on the target to overwrite it.
@@ -249,6 +255,7 @@ PROMPT, CHOICES, and CATEGORY are passed to `complete-with-action'."
 		       (complete-with-action action choices string predicate)))
 		   nil t))
 
+;;;###autoload
 (defun chezmoi-find (file)
   "Edit a source FILE managed by chezmoi.
 If the target file has the same state as the source file,add a hook to
@@ -271,6 +278,7 @@ Note: Does not run =chezmoi edit=."
 	(unless chezmoi-mode (chezmoi-mode))
 	source-file))))
 
+;;;###autoload
 (defun chezmoi-sync-files (files &optional arg)
   "Iteratively select file from FILES to sync.
 Interactively select whether to sync the source state or the target state.
@@ -290,6 +298,7 @@ Prefix ARG is passed to `chezmoi-write'."
 		(chezmoi-write file arg))
       (setq files (remove file files)))))
 
+;;;###autoload
 (defun chezmoi-open-other (file)
   "Open buffer's target FILE."
   (interactive (list (buffer-file-name)))
@@ -299,10 +308,46 @@ Prefix ARG is passed to `chezmoi-write'."
 		  chezmoi-target-file
 		  find-file)))
 
+(defun chezmoi--data-at-keys (keys)
+  "Return the chezmoi data found by following KEYS, or nil."
+  (cl-reduce (lambda (data key) (when (hash-table-p data) (gethash key data)))
+	     keys
+	     :initial-value (chezmoi-get-data)))
+
+;;;###autoload
+(defun chezmoi-capf ()
+  "Complete chezmoi template keys at point using =chezmoi data=.
+Meant for `completion-at-point-functions'.  Works with the default
+completion UI, Corfu, and Company (through `company-capf')."
+  (when (looking-back "{{-? *\\(\\.[^[:space:]{}]*\\)" (line-beginning-position))
+    (let* ((keys (split-string (match-string-no-properties 1) chezmoi-template-key-regex))
+	   (end (point))
+	   (beg (- end (length (car (last keys)))))
+	   (data 'unfetched)
+	   (get-data (lambda ()
+		       (when (eq data 'unfetched)
+			 (setq data (chezmoi--data-at-keys (remove "" (butlast keys)))))
+		       data)))
+      (list beg end
+	    (completion-table-dynamic
+	     (lambda (_)
+	       (let ((data (funcall get-data)))
+		 (when (hash-table-p data) (hash-table-keys data)))))
+	    :annotation-function
+	    (lambda (candidate)
+	      (let* ((data (funcall get-data))
+		     (value (when (hash-table-p data) (gethash candidate data))))
+		(cond ((stringp value) (format " (%s)" value))
+		      ((hash-table-p value) " <Object>")
+		      (t ""))))
+	    :company-kind (lambda (_) 'keyword)
+	    :exclusive 'no))))
+
 (defun chezmoi-font-lock-keywords ()
   "Keywords for font lock."
   `((,chezmoi-template-regex 0 'chezmoi-template-face prepend)))
 
+;;;###autoload
 (define-minor-mode chezmoi-mode
   "Chezmoi mode for source files."
   :group 'chezmoi
@@ -311,6 +356,7 @@ Prefix ARG is passed to `chezmoi-write'."
 	(unless (chezmoi-changed-p (buffer-file-name))
 	  (add-hook 'after-save-hook #'chezmoi-write 0 t))
 	(add-hook 'after-change-functions #'chezmoi-template--after-change nil 1)
+	(add-hook 'completion-at-point-functions #'chezmoi-capf nil t)
 
 	(font-lock-add-keywords nil (chezmoi-font-lock-keywords) 'append)
 	(chezmoi-template-buffer-display t)
@@ -320,6 +366,7 @@ Prefix ARG is passed to `chezmoi-write'."
 
       (remove-hook 'after-save-hook #'chezmoi-write t)
       (remove-hook 'after-change-functions #'chezmoi-template--after-change t)
+      (remove-hook 'completion-at-point-functions #'chezmoi-capf t)
 
       (font-lock-remove-keywords nil (chezmoi-font-lock-keywords))
       (font-lock-ensure (point-min) (point-max)))))

@@ -2,8 +2,8 @@
 
 ;; Author: Harrison Pielke-Lombardo
 ;; Maintainer: Harrison Pielke-Lombardo
-;; Version: 1.1.0
-;; Package-Requires: ((emacs "26.1") (chezmoi "1.1.0"))
+;; Version: 1.2.0
+;; Package-Requires: ((emacs "26.1"))
 ;; Homepage: http://www.github.com/tuh8888/chezmoi.el
 ;; Keywords: vc
 
@@ -56,6 +56,7 @@ N, BUF-TYPE, CTRL-BUF, START, and END are all passed to `ediff'."
        (or end (ediff-get-diff-posn buf-type 'end n ctrl-buf))))))
 
 (defun chezmoi-ediff--ediff-cleanup-hook ()
+  "Write the source file if the ediff buffers ended up identical."
   (when chezmoi-ediff-force-overwrite
     (when-let (source-file (or (with-current-buffer ediff-buffer-A chezmoi-ediff--source-file)
 			       (with-current-buffer ediff-buffer-B chezmoi-ediff--source-file)))
@@ -63,9 +64,11 @@ N, BUF-TYPE, CTRL-BUF, START, and END are all passed to `ediff'."
 		   (with-current-buffer ediff-buffer-B (buffer-string)))
 	(chezmoi-write source-file t)))))
 
-(defvar chezmoi-ediff--ediff-quit-hook ()
+(defun chezmoi-ediff--ediff-quit-hook ()
+  "Remove the template-aware advice once ediff quits."
   (advice-remove 'ediff-get-region-contents #'chezmoi-ediff--ediff-get-region-contents))
 
+;;;###autoload
 (defun chezmoi-ediff (file)
   "Choose a FILE to merge with its source using `ediff'.
 Note: Does not run =chezmoi merge=."
@@ -73,19 +76,12 @@ Note: Does not run =chezmoi merge=."
    (list (chezmoi--completing-read "Select a dotfile to merge: "
 				   (chezmoi-changed-files)
 				   'project-file)))
-  (let* ((ident (when (fboundp 'chezmoi-age-get-identity) (chezmoi-age-get-identity)))
-	 (recips (when (fboundp 'chezmoi-age-get-recipients) (chezmoi-age-get-recipients)))
-	 (age-always-use-default-keys (and (equal ident age-default-identity)
-					   (equal (if (equal 1 (length recips))
-						      (car recips)
-						    recips)
-						  age-default-recipient))))
-    (let* ((source-file (chezmoi-find file)))
-      (advice-add 'ediff-get-region-contents :override #'chezmoi-ediff--ediff-get-region-contents)
-      (setq chezmoi-ediff--source-file source-file)
-      (ediff-files source-file file)
-      (add-hook 'ediff-cleanup-hook #'chezmoi-ediff--ediff-cleanup-hook nil t)
-      (add-hook 'ediff-quit-hook #'chezmoi-ediff--ediff-quit-hook nil t))))
+  (let* ((source-file (chezmoi-find file)))
+    (advice-add 'ediff-get-region-contents :override #'chezmoi-ediff--ediff-get-region-contents)
+    (setq chezmoi-ediff--source-file source-file)
+    (ediff-files source-file file)
+    (add-hook 'ediff-cleanup-hook #'chezmoi-ediff--ediff-cleanup-hook nil t)
+    (add-hook 'ediff-quit-hook #'chezmoi-ediff--ediff-quit-hook nil t)))
 
 (provide 'chezmoi-ediff)
 ;;; chezmoi-ediff.el ends here

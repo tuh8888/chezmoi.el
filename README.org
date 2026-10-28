@@ -15,6 +15,14 @@ The recording above demonstrates editing a chezmoi template with source file on 
 (use-package chezmoi)
   #+end_src
 
+  The ~chezmoi~ package includes Ediff, Dired, and completion support. Magit and age integrations are separate packages (see [[Integrations]]). If you install from git with straight or elpaca, add them with a ~:files~ entry:
+
+  #+begin_src emacs-lisp :noweb yes
+(use-package chezmoi-magit
+  :straight (chezmoi-magit :host github :repo "tuh8888/chezmoi.el"
+                           :files ("extensions/chezmoi-magit.el")))
+  #+end_src
+
   Add keybindings to some functions. Or call using ~M-x <cmd>~.
 
   #+begin_src emacs-lisp :noweb yes
@@ -60,24 +68,11 @@ The recording above demonstrates editing a chezmoi template with source file on 
    Emacs has a lovely package called ~ediff~ for comparing differences between files which is perfect for when the source and target states get out of sync. Quickly resolve inconsistencies between source and target states using ~chezmoi-ediff~. Or view the raw diff using ~chezmoi-diff~ if you prefer. Pipe this into your own diff workflow using ~(chezmoi-diff 1)~ to give raw diff input to some other diff management tool.
 
 
-** Company
+** Completion (Company, Corfu, and the default UI)
 
-   Company integration is provided through ~chezmoi-company-backend~. Simply add it to to ~company-backends~. This will show completions for when editing template variables.
+   ~chezmoi-capf~ completes template variables from ~chezmoi data~ while you type inside ~{{ .~. ~chezmoi-mode~ adds it to ~completion-at-point-functions~ for you, so it works with ~M-x completion-at-point~, Corfu, and Company (through ~company-capf~) with no extra setup.
 
-   #+begin_src emacs-lisp :noweb yes
-(require 'chezmoi-company)
-(add-hook 'chezmoi-mode-hook #'(lambda () (if chezmoi-mode
-                                              (add-to-list 'company-backends 'chezmoi-company-backend)
-                                            (delete 'chezmoi-company-backend 'company-backends))))
-   #+end_src
-
-** Cape
-   Cape integration is provided through ~chezmoi-capf~. Simply add it to to ~completion-at-point-functions~. This will show completions for when editing template variables.
-
-   #+begin_src emacs-lisp :noweb yes
-(require 'chezmoi-cape)
-(add-to-list 'completion-at-point-functions #'chezmoi-capf)
-   #+end_src
+   The old ~chezmoi-company~ and ~chezmoi-cape~ extensions are obsolete. Remove them from your config.
 
 ** Dired
 
@@ -85,7 +80,19 @@ The recording above demonstrates editing a chezmoi template with source file on 
 
 ** Magit
 
-   Use ~chezmoi-magit-status~ to jump to the ~magit-status~ for your chezmoi.
+   Magit integration is a separate package, ~chezmoi-magit~, so that ~chezmoi~ itself does not depend on Magit. Use ~chezmoi-magit-status~ to jump to the ~magit-status~ for your chezmoi.
+
+   #+begin_src emacs-lisp :noweb yes
+(use-package chezmoi-magit)
+   #+end_src
+
+** Age
+
+   [[https://github.com/anticomputer/age.el][age.el]] integration is a separate package, ~chezmoi-age~. When loaded, ~chezmoi-ediff~ reuses your age identity and recipients from chezmoi's config so encrypted files open without prompting.
+
+   #+begin_src emacs-lisp :noweb yes
+(use-package chezmoi-age)
+   #+end_src
 
 ** Org
 
@@ -189,11 +196,6 @@ The recording above demonstrates editing a chezmoi template with source file on 
 
 
     (setq chezmoi-template-display-p t) ;; Display template values in all source buffers.
-
-    (require 'chezmoi-company)
-    (add-hook 'chezmoi-mode-hook #'(lambda () (if chezmoi-mode
-                                             (add-to-list 'company-backends 'chezmoi-company-backend)
-                                           (setq company-backends (delete 'chezmoi-company-backend company-backends)))))
 
     ;; Turn off ligatures cuz they look bad.
     (add-hook 'chezmoi-mode-hook #'(lambda () (ligature-mode (if chezmoi-mode 0 1))))

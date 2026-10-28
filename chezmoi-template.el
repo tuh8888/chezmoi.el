@@ -116,6 +116,7 @@ When START is non-nil, find only the region around START."
                     (setq end (next-single-property-change start 'chezmoi buf)))
           (funcall f start end buffer-or-name))))))
 
+;;;###autoload
 (defun chezmoi-template-buffer-display (&optional display-p start buffer-or-name)
   "Display templates found in BUFFER-OR-NAME.
 If called interactively, toggle display of templates in current buffer.
